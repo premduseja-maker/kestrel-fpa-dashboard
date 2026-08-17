@@ -19,6 +19,10 @@ export default async function OverviewPage({ searchParams }: PageProps<"/">) {
   const range = parseRange(rangeParam);
   const overview = await getOverview(range);
 
+  // Drives how the variance card is framed: an all-one-sided series reads better
+  // as a shortfall growing up from a baseline than as bars hanging off zero.
+  const allUnfavourable = overview.ebitda.every((d) => d.variance <= 0);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -65,12 +69,24 @@ export default async function OverviewPage({ searchParams }: PageProps<"/">) {
       />
 
       <ChartCard
-        title="EBITDA variance to budget"
-        subtitle="Actual less budget, by month"
-        legend={[
-          { label: "Favourable", color: "var(--pos)", shape: "rect" },
-          { label: "Unfavourable", color: "var(--neg)", shape: "rect" },
-        ]}
+        title={
+          allUnfavourable
+            ? "EBITDA shortfall against budget"
+            : "EBITDA variance to budget"
+        }
+        subtitle={
+          allUnfavourable
+            ? `Budget less actual, by month — every one of these ${overview.ebitda.length} months fell short`
+            : "Actual less budget, by month"
+        }
+        legend={
+          allUnfavourable
+            ? [{ label: "Shortfall", color: "var(--neg)", shape: "rect" }]
+            : [
+                { label: "Favourable", color: "var(--pos)", shape: "rect" },
+                { label: "Unfavourable", color: "var(--neg)", shape: "rect" },
+              ]
+        }
         chart={<VarianceChart data={overview.ebitda} />}
         table={
           <ActualVsBudgetTable

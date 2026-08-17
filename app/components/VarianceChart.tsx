@@ -33,16 +33,31 @@ export function VarianceChart({
   const [active, setActive] = useState<number | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
 
+  /**
+   * When every month is on the same side of budget, a signed diverging chart
+   * pins the zero rule to one edge and hangs all the bars off it — which reads
+   * as an upside-down chart, not as a variance. In that case plot the shortfall
+   * as a magnitude growing up from a baseline instead; the sign never gets lost
+   * because the title, the colour, the tooltip and the table all still carry it.
+   */
+  const asMagnitude = useMemo(
+    () => data.length > 0 && data.every((d) => d.variance <= 0),
+    [data],
+  );
+
+  const plotValue = (d: ActualVsBudgetPoint) =>
+    asMagnitude ? Math.abs(d.variance) : d.variance;
+
   const scale = useMemo(() => {
-    const values = data.map((d) => d.variance);
+    const values = data.map(plotValue);
     // Always include zero: the baseline is the whole point of the form.
     const min = Math.min(0, ...values);
     const max = Math.max(0, ...values);
     const pad = (max - min) * 0.05 || 1;
-    // Pad outward from zero only on the side that actually has bars — otherwise
-    // an all-negative month set reserves headroom above zero for nothing.
+    // Pad outward from zero only on the side that actually has bars.
     return niceScale(min < 0 ? min - pad : 0, max > 0 ? max + pad : 0);
-  }, [data]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, asMagnitude]);
 
   const n = data.length;
   const band = n === 0 ? PLOT_W : PLOT_W / n;
@@ -94,7 +109,9 @@ export function VarianceChart({
         className="block h-auto w-full touch-none"
         role="img"
         tabIndex={0}
-        aria-label={`Variance to budget by month, ${monthLabelLong(
+        aria-label={`${
+          asMagnitude ? "Shortfall against budget" : "Variance to budget"
+        } by month, ${monthLabelLong(
           data[0]?.month ?? "",
         )} to ${monthLabelLong(
           data[n - 1]?.month ?? "",
@@ -139,9 +156,9 @@ export function VarianceChart({
                 bandCentre(i) - barWidth / 2,
                 barWidth,
                 zeroY,
-                y(d.variance),
+                y(plotValue(d)),
               )}
-              fill={favourable ? "var(--pos)" : "var(--neg)"}
+              fill={favourable && !asMagnitude ? "var(--pos)" : "var(--neg)"}
               opacity={dimmed ? 0.4 : 1}
             />
           );
