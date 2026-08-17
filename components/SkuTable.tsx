@@ -10,7 +10,7 @@ import {
   type SortingState,
 } from "@tanstack/react-table";
 import { CATEGORIES, type Category } from "@/lib/data";
-import { pct, pts, usdFull } from "@/lib/format";
+import { count, pct, pts, usdFull } from "@/lib/format";
 import type { SkuMarginRow } from "@/lib/metrics/margin";
 import { Sparkline } from "./Sparkline";
 
@@ -133,7 +133,7 @@ export function SkuTable({ rows }: { rows: SkuMarginRow[] }) {
           </select>
         </label>
         <p className="text-[11px] text-muted">
-          {data.length} of {rows.length} SKUs · sorted by margin deterioration
+          {count(data.length)} of {count(rows.length)} SKUs · sorted by margin deterioration
           by default
         </p>
       </div>

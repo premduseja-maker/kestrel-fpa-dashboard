@@ -13,7 +13,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { days, monthLong, monthShort } from "@/lib/format";
+import { days, daysChange, daysShort, monthLong, monthShort } from "@/lib/format";
 import type { CycleDrift, CyclePoint } from "@/lib/metrics/cash";
 import { niceTicks } from "@/lib/ticks";
 import { usePrefersReducedMotion } from "./hooks";
@@ -70,7 +70,7 @@ export function CashCycleChart({
           <YAxis
             domain={[scale.lo, scale.hi]}
             ticks={scale.ticks}
-            tickFormatter={(value: number) => `${Math.round(value)}d`}
+            tickFormatter={daysShort}
             axisLine={false}
             tickLine={false}
             tick={{ fill: "var(--muted)", fontSize: 10 }}
@@ -114,9 +114,9 @@ export function CashCycleChart({
               <Label
                 value={`Cycle ${days(drift.first)} → ${days(
                   drift.last,
-                )} · ${drift.leadDriver.toLowerCase()} the largest mover at ${
-                  drift.leadDriverDelta > 0 ? "+" : ""
-                }${Math.round(drift.leadDriverDelta)}d`}
+                )} · ${drift.leadDriver.toLowerCase()} the largest mover at ${daysChange(
+                  drift.leadDriverDelta,
+                )}`}
                 position="insideTopLeft"
                 offset={-26}
                 fill="var(--signal)"

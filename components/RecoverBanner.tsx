@@ -1,6 +1,6 @@
 "use client";
 
-import { pct, usd, usdFull } from "@/lib/format";
+import { coverMonths, pct, usd, usdFull } from "@/lib/format";
 import {
   RECOVER_PRESET,
   type RecoverOutcome,
@@ -35,7 +35,7 @@ export function RecoverBanner({
             <span className="fig">{pct(RECOVER_PRESET.apparelDiscount)}</span>,
             stock cover back to{" "}
             <span className="fig">
-              {RECOVER_PRESET.apparelCover.toFixed(1)}m
+              {coverMonths(RECOVER_PRESET.apparelCover)}
             </span>
           </p>
 

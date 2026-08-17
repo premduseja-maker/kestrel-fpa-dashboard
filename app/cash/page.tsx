@@ -19,7 +19,15 @@ import {
   type InventoryMonth,
   type SkuMaster,
 } from "@/lib/data";
-import { days, monthLong, monthShort, usd, usdFull } from "@/lib/format";
+import {
+  count,
+  coverMonthsLong,
+  days,
+  monthLong,
+  monthShort,
+  usd,
+  usdFull,
+} from "@/lib/format";
 import {
   ageingSeries,
   cashAssumptions,
@@ -146,7 +154,7 @@ export default function CashScreen() {
         <h1 className="heading text-[17px] text-ink">Cash and working capital</h1>
         <p className="mt-0.5 text-[12px] text-muted">
           {model
-            ? `Cycle across ${model.months.length} months · detail as at ${monthLong(model.month)}`
+            ? `Cycle across ${count(model.months.length)} months · detail as at ${monthLong(model.month)}`
             : "Loading"}
         </p>
       </header>
@@ -234,9 +242,9 @@ export default function CashScreen() {
         <Card>
           <CardHeader
             title="Where the cash is tied up"
-            subtitle={`The ten SKUs holding the most stock above ${TARGET_COVER.toFixed(
-              1,
-            )} months of cover, and what returning them to it would release.`}
+            subtitle={`The ten SKUs holding the most stock above ${coverMonthsLong(
+              TARGET_COVER,
+            )} of cover, and what returning them to it would release.`}
           />
           <div className="min-w-0 px-4 pb-5 pt-3 sm:px-5">
             {model?.heat ? (

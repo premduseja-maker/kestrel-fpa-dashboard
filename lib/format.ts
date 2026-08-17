@@ -102,6 +102,35 @@ export function days(value: number): string {
   return `${Math.round(value)} days`;
 }
 
+/** Days where space is tight, such as an axis tick: `124d`. */
+export function daysShort(value: number): string {
+  return `${Math.round(value)}d`;
+}
+
+/** Months of inventory cover, compact: `2.7m`. */
+export function coverMonths(value: number): string {
+  return `${value.toFixed(1)}m`;
+}
+
+/** Months of inventory cover, spelled out: `2.7 months`. */
+export function coverMonthsLong(value: number): string {
+  return `${value.toFixed(1)} months`;
+}
+
+/** A plain count of things: `3,550`. */
+export function count(value: number): string {
+  return Math.round(value).toLocaleString("en-US");
+}
+
+/**
+ * A bare statistic that is not a currency, a rate or a count — a correlation
+ * coefficient, for instance. Signed with a minus, because parentheses are the
+ * accounting convention for money and would misread here.
+ */
+export function statistic(value: number, decimals = 2): string {
+  return value.toFixed(decimals);
+}
+
 /** A signed movement in days: `+50 days`. */
 export function daysChange(value: number): string {
   const sign = value > 0 ? "+" : value < 0 ? "-" : "";

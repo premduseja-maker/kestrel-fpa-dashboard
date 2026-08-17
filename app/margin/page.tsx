@@ -15,7 +15,14 @@ import {
   WATERFALL_HEIGHT,
 } from "@/components/WaterfallChart";
 import { data, type SkuMaster, type SkuMonth } from "@/lib/data";
-import { monthShort, pct, ptsMagnitude, usdFull } from "@/lib/format";
+import {
+  count,
+  monthShort,
+  pct,
+  ptsMagnitude,
+  statistic,
+  usdFull,
+} from "@/lib/format";
 import {
   categoryMarginSeries,
   discountMarginPoints,
@@ -259,9 +266,7 @@ export default function MarginScreen() {
                     move with returns at all — a returns effect would be
                     structurally zero. The exposure, valuing FY2&rsquo;s{" "}
                     <span className="fig">
-                      {Math.round(model.bridge.returns.unitsFy2).toLocaleString(
-                        "en-US",
-                      )}
+                      {count(model.bridge.returns.unitsFy2)}
                     </span>{" "}
                     returned units at FY2 unit margin, is{" "}
                     <span className="fig">
@@ -316,7 +321,7 @@ export default function MarginScreen() {
           {model?.scatter?.fit && (
             <p className="px-4 pb-5 text-[12px] leading-relaxed text-muted sm:px-5">
               Across{" "}
-              <span className="fig">{model.scatter.points.length}</span>{" "}
+              <span className="fig">{count(model.scatter.points.length)}</span>{" "}
               {model.scatter.category.toLowerCase()} SKU-months, every{" "}
               <span className="fig">10 points</span> of additional discount{" "}
               {model.scatter.fit.slope < 0 ? "costs" : "adds"}{" "}
@@ -324,7 +329,7 @@ export default function MarginScreen() {
                 {ptsMagnitude(model.scatter.fit.slope * 0.1)}
               </span>{" "}
               of gross margin, a correlation of{" "}
-              <span className="fig">{model.scatter.fit.r.toFixed(2)}</span>. The
+              <span className="fig">{statistic(model.scatter.fit.r)}</span>. The
               FY2 cloud sits to the right and below the FY1 cloud: the discount
               went up and the margin followed it down. This is an association in
               the data, not a controlled experiment — but with a slope this steep

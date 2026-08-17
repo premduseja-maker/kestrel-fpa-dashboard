@@ -1,4 +1,4 @@
-import { pct, ptsMagnitude, usdFull } from "@/lib/format";
+import { coverMonths, pct, ptsMagnitude, usdFull } from "@/lib/format";
 import {
   AGEING_BUCKETS,
   type CustomerAgeingRow,
@@ -40,7 +40,7 @@ export function ExcessStockTable({
               Stock value
             </th>
             <th scope="col" className="px-2 py-2 text-right font-medium">
-              Cash released at {targetCover.toFixed(1)}m
+              Cash released at {coverMonths(targetCover)}
             </th>
           </tr>
         </thead>
@@ -57,7 +57,7 @@ export function ExcessStockTable({
                 {row.product}
               </td>
               <td className="px-2 py-1.5 text-right text-ink">
-                {row.monthsOnHand.toFixed(1)}m
+                {coverMonths(row.monthsOnHand)}
               </td>
               <td className="px-2 py-1.5 text-right text-muted">
                 {usdFull(row.closingValue)}

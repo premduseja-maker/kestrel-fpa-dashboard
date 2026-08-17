@@ -1,6 +1,6 @@
 "use client";
 
-import { pct, pctChange, usdFull } from "@/lib/format";
+import { coverMonths, pct, pctChange, usdFull } from "@/lib/format";
 import type {
   Baseline,
   DriverKey,
@@ -134,7 +134,7 @@ function Slider({
 
 function format(value: number, spec: DriverSpec): string {
   if (spec.unit === "percent") return pct(value);
-  if (spec.unit === "months") return `${value.toFixed(1)}m`;
+  if (spec.unit === "months") return coverMonths(value);
   return usdFull(value);
 }
 
