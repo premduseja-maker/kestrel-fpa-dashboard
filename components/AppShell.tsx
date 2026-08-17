@@ -15,6 +15,7 @@ const SCREENS = [
   { href: "/", label: "Summary" },
   { href: "/margin", label: "Margin" },
   { href: "/cash", label: "Cash" },
+  { href: "/forecast", label: "Forecast" },
 ] as const;
 
 /**
