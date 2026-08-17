@@ -20,7 +20,7 @@ export function MonthSelector() {
         disabled={status !== "ready"}
         aria-label="Reporting month"
         className="fig cursor-pointer border border-rule bg-surface px-2 py-1 text-[12px] text-ink disabled:cursor-not-allowed disabled:text-muted"
-        style={{ borderRadius: 2 }}
+        style={{ borderRadius: 5 }}
       >
         {months.length === 0 && <option value="">—</option>}
         {[...months].reverse().map((month) => (

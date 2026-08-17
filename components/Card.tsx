@@ -14,8 +14,8 @@ export function Card({
 }) {
   return (
     <div
-      className={`rounded-sm border border-rule bg-surface ${className}`}
-      style={{ borderRadius: 2 }}
+      className={`border border-rule bg-surface ${className}`}
+      style={{ borderRadius: 6 }}
     >
       {children}
     </div>

@@ -38,7 +38,11 @@
   --color-ink-wash: var(--ink-wash);
 
   --font-sans: var(--font-plex-sans);
-  --font-mono: var(--font-plex-mono);
+
+  /* Cards: a 6px radius rather than the near-square 2px. Same hairline rule and
+     no shadow, so the density holds, but the corners stop reading as a terminal
+     window. */
+  --radius-card: 6px;
 }
 
 body {
@@ -47,11 +51,15 @@ body {
   font-family: var(--font-plex-sans), system-ui, -apple-system, sans-serif;
 }
 
-/* Every figure: mono, tabular, so columns align down the page. */
+/* Every figure: tabular numerals so columns align down the page, but set in the
+   UI sans rather than a monospace. Monospaced figures at headline sizes read
+   mechanical — "$271.2k" in mono looks like console output, not a financial
+   statement. tabular-nums keeps the alignment that matters without the
+   typewriter texture. */
 .fig {
-  font-family: var(--font-plex-mono), ui-monospace, "Cascadia Mono", monospace;
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum" 1;
+  letter-spacing: -0.006em;
 }
 
 /* Headings: tight tracking, weight 600. No display serif anywhere. */
@@ -66,9 +74,9 @@ body {
   border-radius: 2px;
 }
 
-/* Recharts draws its own SVG text; keep it on the UI sans by default. */
+/* Recharts draws its own SVG text; keep it on the UI sans with tabular figures. */
 .recharts-wrapper text {
-  font-family: var(--font-plex-mono), ui-monospace, monospace;
+  font-family: var(--font-plex-sans), system-ui, sans-serif;
   font-variant-numeric: tabular-nums;
 }
 

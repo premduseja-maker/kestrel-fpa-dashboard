@@ -2,11 +2,11 @@
 
 import { useMemo } from "react";
 import { Card, CardHeader } from "@/components/Card";
-import {
-  EbitdaBridgeChart,
-  BRIDGE_HEIGHT,
-} from "@/components/EbitdaBridgeChart";
 import { KpiStrip, KpiStripSkeleton } from "@/components/KpiStrip";
+import {
+  WaterfallChart,
+  WATERFALL_HEIGHT,
+} from "@/components/WaterfallChart";
 import {
   RevenueEbitdaChart,
   REVENUE_EBITDA_HEIGHT,
@@ -97,11 +97,20 @@ export default function ExecutiveSummary() {
           />
           <div className="min-w-0 px-2 pb-4 pt-2 sm:px-3">
             {model?.bridge ? (
-              <EbitdaBridgeChart bridge={model.bridge} />
+              <WaterfallChart
+                bars={model.bridge.bars}
+                floor={model.bridge.floor}
+                ceiling={model.bridge.ceiling}
+                shortLabels={{
+                  "Budget EBITDA": "Budget",
+                  "Actual EBITDA": "Actual",
+                }}
+                totalMeaning="EBITDA level"
+              />
             ) : model ? (
               <NoBudget />
             ) : (
-              <ChartSkeleton height={BRIDGE_HEIGHT} />
+              <ChartSkeleton height={WATERFALL_HEIGHT} />
             )}
           </div>
         </Card>
@@ -167,7 +176,7 @@ export default function ExecutiveSummary() {
             ) : model ? (
               <NoBudget />
             ) : (
-              <ChartSkeleton height={BRIDGE_HEIGHT} />
+              <ChartSkeleton height={WATERFALL_HEIGHT} />
             )}
           </div>
         </Card>

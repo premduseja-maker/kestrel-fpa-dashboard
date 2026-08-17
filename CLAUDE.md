@@ -92,13 +92,22 @@ elsewhere destroys that.
 
 Type:
 - UI: IBM Plex Sans
-- All figures: IBM Plex Mono, `font-variant-numeric: tabular-nums`
+- All figures: IBM Plex Sans with `font-variant-numeric: tabular-nums`
 - Headings: IBM Plex Sans, weight 600, tight tracking. No display serif.
 
 Load via `next/font/google`.
 
 Layout: dense. 12-column grid, 16px gutters. Cards use a 1px rule, no shadow,
-2px radius. Generous whitespace inside cards, tight spacing between them.
+6px radius. Generous whitespace inside cards, tight spacing between them.
+
+**Amended 2026-08-17 (supersedes the original type and radius spec).** Figures
+were specified in IBM Plex Mono at 2px radius; the result read mechanical —
+`$271.2k` in a monospace at headline size looks like console output rather than a
+financial statement. Figures now use the UI sans with `tabular-nums`, which keeps
+the column alignment that matters and drops the typewriter texture, and cards use
+a 6px radius. Do not reintroduce a monospace for figures, letterspaced uppercase
+labels, or near-square corners. The palette, the hairline rules, the absence of
+shadows and the density are unchanged.
 
 **Signature element — the Variance Ribbon.** A persistent full-width strip below
 the header on every screen, stating the single largest driver of the current

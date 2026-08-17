@@ -82,6 +82,14 @@ export function pts(fractionDelta: number): string {
   return `${sign}${Math.abs(points).toFixed(1)}pts`;
 }
 
+/**
+ * Magnitude only, for prose that already carries the direction in words —
+ * "fell 2.3pts" rather than the double negative "fell -2.3pts".
+ */
+export function ptsMagnitude(fractionDelta: number): string {
+  return `${Math.abs(fractionDelta * 100).toFixed(1)}pts`;
+}
+
 /** A relative change in a value: `+15.4%`, `-91.6%`. */
 export function pctChange(fraction: number): string {
   const value = fraction * 100;

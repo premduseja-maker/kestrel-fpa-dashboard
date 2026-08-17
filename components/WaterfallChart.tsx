@@ -13,57 +13,69 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import type { EbitdaBridge } from "@/lib/metrics/core";
+import type { BridgeBar } from "@/lib/metrics/core";
 import { usd, usdFull } from "@/lib/format";
 import { niceTicks } from "@/lib/ticks";
 import { usePrefersReducedMotion } from "./hooks";
 
-export const BRIDGE_HEIGHT = 320;
-
-/** Axis labels are shortened; the tooltip carries the full wording. */
-const SHORT_LABEL: Record<string, string> = {
-  "Budget EBITDA": "Budget",
-  "Actual EBITDA": "Actual",
-};
+export const WATERFALL_HEIGHT = 320;
 
 /**
- * Budget EBITDA -> Actual EBITDA as a waterfall.
+ * A waterfall: two anchoring totals with signed contributions between them.
+ * Shared by the EBITDA bridge on the summary and the gross profit bridge on the
+ * margin screen.
  *
  * Recharts stacks from a single baseline, so each bar is drawn as a transparent
- * spacer plus a visible span. The whole frame is shifted up by `floor` to keep
- * both parts non-negative — a stack containing a negative spacer renders on the
- * wrong side of zero — and the y-axis formatter shifts the labels back, so the
- * reader sees true values throughout.
+ * spacer plus a visible span. The frame is shifted up by `floor` to keep both
+ * parts non-negative — a stack containing a negative spacer renders on the wrong
+ * side of zero — and the axis formatter shifts labels back, so the reader sees
+ * true values. Ticks are computed in real value space for the same reason:
+ * letting Recharts choose them on the shifted frame produces labels like "($9)"
+ * where zero belongs.
  */
-export function EbitdaBridgeChart({ bridge }: { bridge: EbitdaBridge }) {
+export function WaterfallChart({
+  bars,
+  floor,
+  ceiling,
+  height = WATERFALL_HEIGHT,
+  shortLabels = {},
+  totalMeaning = "Level",
+}: {
+  bars: BridgeBar[];
+  floor: number;
+  ceiling: number;
+  height?: number;
+  shortLabels?: Record<string, string>;
+  totalMeaning?: string;
+}) {
   const reducedMotion = usePrefersReducedMotion();
 
-  const { rows, scale, floor } = useMemo(() => {
-    const floorValue = bridge.floor;
-    // Round ticks are computed in real value space, then shifted into the
-    // chart's frame — otherwise the shift lands them on values like "($9)".
-    const real = niceTicks(bridge.floor, bridge.ceiling);
+  const { rows, scale } = useMemo(() => {
+    const real = niceTicks(floor, ceiling);
     return {
-      floor: floorValue,
       scale: {
-        lo: real.lo - floorValue,
-        hi: real.hi - floorValue,
-        ticks: real.ticks.map((tick) => tick - floorValue),
+        lo: real.lo - floor,
+        hi: real.hi - floor,
+        ticks: real.ticks.map((tick) => tick - floor),
       },
-      rows: bridge.bars.map((bar) => ({
+      rows: bars.map((bar) => ({
         label: bar.label,
-        short: SHORT_LABEL[bar.label] ?? bar.label,
-        spacer: bar.from - floorValue,
+        short: shortLabels[bar.label] ?? bar.label,
+        spacer: bar.from - floor,
         span: Math.max(bar.to - bar.from, 0),
         value: bar.value,
         kind: bar.kind,
         favourable: bar.favourable,
+        totalMeaning,
       })),
     };
-  }, [bridge]);
+    // shortLabels is a literal at every call site; keying on its identity would
+    // rebuild every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bars, floor, ceiling, totalMeaning]);
 
   return (
-    <div style={{ height: BRIDGE_HEIGHT }}>
+    <div style={{ height }}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={rows} margin={{ top: 26, right: 12, bottom: 8, left: 4 }}>
           <CartesianGrid stroke="var(--rule)" vertical={false} />
@@ -90,16 +102,25 @@ export function EbitdaBridgeChart({ bridge }: { bridge: EbitdaBridge }) {
             <ReferenceLine y={-floor} stroke="var(--muted)" strokeWidth={1} />
           )}
 
-          <Tooltip content={<BridgeTooltip />} cursor={{ fill: "var(--ink-wash)" }} />
+          <Tooltip
+            content={<WaterfallTooltip />}
+            cursor={{ fill: "var(--ink-wash)" }}
+          />
 
-          <Bar dataKey="spacer" stackId="bridge" fill="transparent" isAnimationActive={false} />
+          <Bar
+            dataKey="spacer"
+            stackId="waterfall"
+            fill="transparent"
+            isAnimationActive={false}
+          />
 
           <Bar
             dataKey="span"
-            stackId="bridge"
+            stackId="waterfall"
             isAnimationActive={!reducedMotion}
             animationDuration={400}
             maxBarSize={54}
+            radius={[3, 3, 0, 0]}
           >
             {rows.map((row) => (
               <Cell
@@ -116,10 +137,7 @@ export function EbitdaBridgeChart({ bridge }: { bridge: EbitdaBridge }) {
             <LabelList
               dataKey="span"
               content={(props: unknown) => (
-                <BarValueLabel
-                  {...(props as BarLabelProps)}
-                  rows={rows}
-                />
+                <BarValueLabel {...(props as BarLabelProps)} rows={rows} />
               )}
             />
           </Bar>
@@ -137,7 +155,7 @@ interface BarLabelProps {
 }
 
 /**
- * Value sits above each bar. Written by hand rather than through LabelList's
+ * Value above each bar. Written by hand rather than through LabelList's
  * formatter because the label must show the bar's *signed* contribution, not the
  * span that was actually plotted.
  */
@@ -148,7 +166,12 @@ function BarValueLabel({
   index,
   rows,
 }: BarLabelProps & { rows: { value: number }[] }) {
-  if (x === undefined || y === undefined || width === undefined || index === undefined) {
+  if (
+    x === undefined ||
+    y === undefined ||
+    width === undefined ||
+    index === undefined
+  ) {
     return null;
   }
   const row = rows[index];
@@ -167,20 +190,21 @@ function BarValueLabel({
   );
 }
 
-interface BridgeTooltipPayload {
+interface WaterfallTooltipPayload {
   payload?: {
     label?: string;
     value?: number;
     kind?: string;
+    totalMeaning?: string;
   };
 }
 
-function BridgeTooltip({
+function WaterfallTooltip({
   active,
   payload,
 }: {
   active?: boolean;
-  payload?: BridgeTooltipPayload[];
+  payload?: WaterfallTooltipPayload[];
 }) {
   const row = payload?.[0]?.payload;
   if (!active || !row || row.value === undefined) return null;
@@ -188,12 +212,14 @@ function BridgeTooltip({
   return (
     <div
       className="border border-rule bg-surface px-2.5 py-2 text-[11px]"
-      style={{ borderRadius: 2 }}
+      style={{ borderRadius: 5 }}
     >
       <p className="text-muted">{row.label}</p>
       <p className="fig mt-0.5 font-semibold text-ink">{usdFull(row.value)}</p>
       <p className="mt-0.5 text-muted">
-        {row.kind === "total" ? "EBITDA level" : "Contribution to variance"}
+        {row.kind === "total"
+          ? (row.totalMeaning ?? "Level")
+          : "Contribution to movement"}
       </p>
     </div>
   );
