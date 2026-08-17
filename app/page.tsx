@@ -1,137 +1,195 @@
-import Link from "next/link";
-import { ActualVsBudgetTable } from "./components/ActualVsBudgetTable";
-import { ChartCard } from "./components/ChartCard";
-import { StatTile } from "./components/StatTile";
-import { TrendChart } from "./components/TrendChart";
-import { VarianceChart } from "./components/VarianceChart";
-import { monthLabelLong } from "./lib/format";
+"use client";
+
+import { useMemo } from "react";
+import { Card, CardHeader } from "@/components/Card";
 import {
-  DEFAULT_RANGE,
-  getOverview,
-  parseRange,
-  RANGES,
-  type RangeMonths,
-} from "./lib/overview";
+  EbitdaBridgeChart,
+  BRIDGE_HEIGHT,
+} from "@/components/EbitdaBridgeChart";
+import { KpiStrip, KpiStripSkeleton } from "@/components/KpiStrip";
+import {
+  RevenueEbitdaChart,
+  REVENUE_EBITDA_HEIGHT,
+} from "@/components/RevenueEbitdaChart";
+import { useDashboard } from "@/components/DashboardProvider";
+import { monthLong, monthShort, usdFull } from "@/lib/format";
+import { ebitdaBridge, findMonth } from "@/lib/metrics/core";
+import { executiveKpis } from "@/lib/metrics/executive";
 
-export default async function OverviewPage({ searchParams }: PageProps<"/">) {
-  const params = await searchParams;
-  const rangeParam = Array.isArray(params.range) ? params.range[0] : params.range;
-  const range = parseRange(rangeParam);
-  const overview = await getOverview(range);
+export default function ExecutiveSummary() {
+  const { status, error, pl, cashflow, budget, selectedMonth } = useDashboard();
 
-  // Drives how the variance card is framed: an all-one-sided series reads better
-  // as a shortfall growing up from a baseline than as bars hanging off zero.
-  const allUnfavourable = overview.ebitda.every((d) => d.variance <= 0);
+  const model = useMemo(() => {
+    if (status !== "ready" || !selectedMonth) return null;
+
+    const actualRow = findMonth(pl, selectedMonth);
+    const budgetRow = findMonth(budget, selectedMonth);
+
+    return {
+      kpis: executiveKpis(pl, cashflow, selectedMonth),
+      markerIndex: pl.findIndex((row) => row.month === selectedMonth),
+      bridge:
+        actualRow && budgetRow ? ebitdaBridge(actualRow, budgetRow) : null,
+    };
+  }, [status, pl, cashflow, budget, selectedMonth]);
+
+  if (status === "error") {
+    return (
+      <Card className="p-5">
+        <h1 className="heading text-[14px] text-unfavourable">
+          Could not load the data
+        </h1>
+        <p className="mt-1.5 text-[12px] text-muted">
+          {error ?? "Unknown error"}. The datasets are served from{" "}
+          <code>public/data</code>; check they are present and reload.
+        </p>
+      </Card>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight text-ink-primary">
-            Overview
-          </h1>
-          <p className="mt-1 text-[13px] text-ink-secondary">
-            {monthLabelLong(overview.periodStart)} –{" "}
-            {monthLabelLong(overview.periodEnd)}
-          </p>
-        </div>
+    /* min-w-0 on every grid child: a grid item defaults to min-width:auto, so it
+       refuses to shrink below its content's intrinsic width and a chart pushes
+       the whole page into a horizontal scroll at 390px. */
+    <div className="grid grid-cols-12 gap-4">
+      <header className="col-span-12 min-w-0">
+        <h1 className="heading text-[17px] text-ink">Executive summary</h1>
+        <p className="mt-0.5 text-[12px] text-muted">
+          {selectedMonth
+            ? `Reporting month ${monthLong(selectedMonth)}`
+            : "Loading reporting month"}
+        </p>
+      </header>
 
-        {/* One filter row, above everything it scopes: the tiles, both charts
-            and both tables all re-render against this slice. */}
-        <RangeFilter current={range} />
-      </div>
-
-      <section aria-label="Headline figures">
-        <ul className="grid list-none grid-cols-1 gap-3 p-0 sm:grid-cols-2 xl:grid-cols-4">
-          {overview.kpis.map((kpi) => (
-            <li key={kpi.label}>
-              <StatTile kpi={kpi} />
-            </li>
-          ))}
-        </ul>
+      <section className="col-span-12 min-w-0" aria-label="Headline measures">
+        {model ? (
+          <KpiStrip kpis={model.kpis} markerIndex={model.markerIndex} />
+        ) : (
+          <KpiStripSkeleton />
+        )}
       </section>
 
-      <ChartCard
-        title="Net revenue vs budget"
-        subtitle="Monthly, actual against plan"
-        legend={[
-          { label: "Actual", color: "var(--series-1)", shape: "line" },
-          { label: "Budget", color: "var(--series-2)", shape: "line" },
-        ]}
-        chart={<TrendChart data={overview.revenue} valueLabel="Net revenue" />}
-        table={
-          <ActualVsBudgetTable
-            data={overview.revenue}
-            valueLabel="Net revenue"
-            caption="Monthly net revenue, actual against budget, with variance"
+      <section className="col-span-12 min-w-0">
+        <Card>
+          <CardHeader
+            title="Revenue against EBITDA"
+            subtitle="Monthly, all 24 months. Left axis net revenue, right axis EBITDA — two scales, so read each line against its own axis and take the movements, not the crossing point, as the story."
           />
-        }
-      />
+          <div className="min-w-0 px-2 pb-4 pt-2 sm:px-3">
+            {model ? (
+              <RevenueEbitdaChart pl={pl} />
+            ) : (
+              <ChartSkeleton height={REVENUE_EBITDA_HEIGHT} />
+            )}
+          </div>
+        </Card>
+      </section>
 
-      <ChartCard
-        title={
-          allUnfavourable
-            ? "EBITDA shortfall against budget"
-            : "EBITDA variance to budget"
-        }
-        subtitle={
-          allUnfavourable
-            ? `Budget less actual, by month — every one of these ${overview.ebitda.length} months fell short`
-            : "Actual less budget, by month"
-        }
-        legend={
-          allUnfavourable
-            ? [{ label: "Shortfall", color: "var(--neg)", shape: "rect" }]
-            : [
-                { label: "Favourable", color: "var(--pos)", shape: "rect" },
-                { label: "Unfavourable", color: "var(--neg)", shape: "rect" },
-              ]
-        }
-        chart={<VarianceChart data={overview.ebitda} />}
-        table={
-          <ActualVsBudgetTable
-            data={overview.ebitda}
-            valueLabel="EBITDA"
-            caption="Monthly EBITDA, actual against budget, with variance"
+      <section className="col-span-12 min-w-0 lg:col-span-7">
+        <Card>
+          <CardHeader
+            title={
+              selectedMonth
+                ? `Budget to actual EBITDA — ${monthShort(selectedMonth)}`
+                : "Budget to actual EBITDA"
+            }
+            subtitle="Four effects, summing exactly to the variance: revenue at budget margin, margin rate on actual revenue, ad spend, and all other opex."
           />
-        }
-      />
+          <div className="min-w-0 px-2 pb-4 pt-2 sm:px-3">
+            {model?.bridge ? (
+              <EbitdaBridgeChart bridge={model.bridge} />
+            ) : model ? (
+              <NoBudget />
+            ) : (
+              <ChartSkeleton height={BRIDGE_HEIGHT} />
+            )}
+          </div>
+        </Card>
+      </section>
 
-      <p className="text-[12px] leading-relaxed text-ink-muted">
-        Figures are read from the static datasets in <code>public/data</code>.
-        Those files carry no currency field, so the unit shown is an assumption
-        set in <code>app/lib/format.ts</code>. Note that SKU-level revenue in{" "}
-        <code>sku_monthly</code> does not reconcile to the P&amp;L net revenue
-        above — the two are independent series in the source data.
-      </p>
+      <section className="col-span-12 min-w-0 lg:col-span-5">
+        <Card className="h-full">
+          <CardHeader
+            title="Variance detail"
+            subtitle="The same bridge as figures, so every value is readable without hovering."
+          />
+          <div className="min-w-0 overflow-x-auto px-4 pb-5 pt-3 sm:px-5">
+            {model?.bridge ? (
+              <table className="w-full border-collapse text-[12px]">
+                <caption className="sr-only">
+                  Budget EBITDA to actual EBITDA, by effect
+                </caption>
+                <tbody className="fig">
+                  {model.bridge.bars.map((bar) => (
+                    <tr key={bar.label} className="border-b border-rule last:border-0">
+                      <th
+                        scope="row"
+                        className={`py-1.5 pr-3 text-left font-normal ${
+                          bar.kind === "total" ? "text-ink" : "text-muted"
+                        }`}
+                        style={{ fontFamily: "var(--font-plex-sans)" }}
+                      >
+                        {bar.label}
+                      </th>
+                      <td
+                        className={`py-1.5 text-right ${
+                          bar.kind === "total"
+                            ? "font-semibold text-ink"
+                            : bar.favourable
+                              ? "text-favourable"
+                              : "text-unfavourable"
+                        }`}
+                      >
+                        {usdFull(bar.value)}
+                      </td>
+                    </tr>
+                  ))}
+                  <tr>
+                    <th
+                      scope="row"
+                      className="py-2 pr-3 text-left font-semibold text-ink"
+                      style={{ fontFamily: "var(--font-plex-sans)" }}
+                    >
+                      Total variance
+                    </th>
+                    <td
+                      className={`py-2 text-right font-semibold ${
+                        model.bridge.totalVariance >= 0
+                          ? "text-favourable"
+                          : "text-unfavourable"
+                      }`}
+                    >
+                      {usdFull(model.bridge.totalVariance)}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            ) : model ? (
+              <NoBudget />
+            ) : (
+              <ChartSkeleton height={BRIDGE_HEIGHT} />
+            )}
+          </div>
+        </Card>
+      </section>
     </div>
   );
 }
 
-function RangeFilter({ current }: { current: RangeMonths }) {
+function ChartSkeleton({ height }: { height: number }) {
   return (
-    <nav aria-label="Date range" className="flex items-center gap-2">
-      <span className="text-[12px] text-ink-muted">Range</span>
-      <ul className="flex overflow-hidden rounded-md border border-hairline">
-        {RANGES.map((months) => {
-          const active = months === current;
-          return (
-            <li key={months}>
-              <Link
-                href={months === DEFAULT_RANGE ? "/" : `/?range=${months}`}
-                aria-current={active ? "page" : undefined}
-                className={`block px-3 py-1 text-[12px] transition-colors ${
-                  active
-                    ? "bg-wash font-medium text-ink-primary"
-                    : "text-ink-secondary hover:text-ink-primary"
-                }`}
-              >
-                {months}M
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
-    </nav>
+    <div
+      className="animate-pulse rounded-sm bg-ink-wash"
+      style={{ height, borderRadius: 2 }}
+      aria-hidden="true"
+    />
+  );
+}
+
+function NoBudget() {
+  return (
+    <p className="text-[12px] text-muted">
+      No budget row for the selected month, so no bridge can be drawn.
+    </p>
   );
 }
