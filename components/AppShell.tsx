@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { MonthSelector } from "./MonthSelector";
+import { ThemeToggle } from "./ThemeToggle";
 import { VarianceRibbon } from "./VarianceRibbon";
 
 /**
@@ -13,6 +14,7 @@ import { VarianceRibbon } from "./VarianceRibbon";
 const SCREENS = [
   { href: "/", label: "Summary" },
   { href: "/margin", label: "Margin" },
+  { href: "/cash", label: "Cash" },
 ] as const;
 
 /**
@@ -59,7 +61,8 @@ export function AppShell({ children }: { children: ReactNode }) {
             </ul>
           </nav>
 
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-3">
+            <ThemeToggle />
             <MonthSelector />
           </div>
         </div>

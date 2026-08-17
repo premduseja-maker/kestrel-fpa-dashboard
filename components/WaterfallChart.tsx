@@ -127,7 +127,7 @@ export function WaterfallChart({
                 key={row.label}
                 fill={
                   row.kind === "total"
-                    ? "var(--ink)"
+                    ? "var(--mark-neutral)"
                     : row.favourable
                       ? "var(--favourable)"
                       : "var(--unfavourable)"

@@ -1,16 +1,13 @@
 @import "tailwindcss";
 
 /* ---------------------------------------------------------------------------
-   The ledger palette from CLAUDE.md. One light instrument look, committed to
-   deliberately — there is no dark variant, so every colour is stated once.
+   The ledger palette from CLAUDE.md, light theme. The dark theme follows below.
 
    Favourable and unfavourable are reserved for variance meaning. Nothing
    decorative may wear them, or they stop carrying information.
    --------------------------------------------------------------------------- */
 
 :root {
-  color-scheme: light;
-
   --ink: #12161c;
   --paper: #fafaf7;
   --surface: #ffffff;
@@ -23,6 +20,77 @@
   /* Washes derived from the above, for reference bands and hover states only. */
   --signal-wash: rgba(199, 119, 0, 0.07);
   --ink-wash: rgba(18, 22, 28, 0.04);
+
+  /* Neutral fill for large filled marks that carry no favourable/unfavourable
+     meaning — the anchoring totals on a waterfall. Distinct from --ink because
+     ink inverts to near-white in dark mode, and a near-white block reads as a
+     glaring slab rather than a quiet anchor. Strokes may still use ink. */
+  --mark-neutral: #12161c;
+
+  color-scheme: light;
+}
+
+/* ---------------------------------------------------------------------------
+   Dark theme.
+
+   These are *selected* steps for the dark surface, not an inversion of the light
+   values: the light favourable/unfavourable/signal are far too dark to sit on a
+   dark ground. The three were chosen by running the palette validator against
+   surface #171A1E and iterating —
+
+     favourable  #2FA98D   unfavourable #E3495B   signal #B98C1E
+
+   which passes the dark lightness band, the chroma floor, the normal-vision
+   floor (worst pair 17.1) and 3:1 contrast on the surface. Its CVD separation
+   sits at 6.5 deuteranopia, inside the 6-8 band that is permitted only with
+   secondary encoding — satisfied throughout: every waterfall bar carries its
+   value as a direct label, the scatter's fitted line is a stroke over dots
+   rather than a same-shape mark, and each chart has a figures table beside it.
+
+   Note that unfavourable moved off red-orange toward a truer red for dark. The
+   obvious step, #E06A4E, collapsed against the gold signal under deuteranopia
+   (ΔE 4.2) because amber and red-orange are adjacent hues.
+
+   Declared under both the media query and the [data-theme] scope so an explicit
+   choice wins in either direction.
+   --------------------------------------------------------------------------- */
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    --ink: #edeff2;
+    --paper: #0e1013;
+    --surface: #171a1e;
+    --rule: #282d34;
+    --muted: #99a1aa;
+    --unfavourable: #e3495b;
+    --favourable: #2fa98d;
+    --signal: #b98c1e;
+
+    --mark-neutral: #7a828c;
+
+    --signal-wash: rgba(185, 140, 30, 0.12);
+    --ink-wash: rgba(255, 255, 255, 0.06);
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --ink: #edeff2;
+  --paper: #0e1013;
+  --surface: #171a1e;
+  --rule: #282d34;
+  --muted: #99a1aa;
+  --unfavourable: #e3495b;
+  --favourable: #2fa98d;
+  --signal: #b98c1e;
+
+  --mark-neutral: #7a828c;
+
+  --signal-wash: rgba(185, 140, 30, 0.12);
+  --ink-wash: rgba(255, 255, 255, 0.06);
 }
 
 @theme inline {
@@ -36,6 +104,7 @@
   --color-signal: var(--signal);
   --color-signal-wash: var(--signal-wash);
   --color-ink-wash: var(--ink-wash);
+  --color-mark-neutral: var(--mark-neutral);
 
   --font-sans: var(--font-plex-sans);
 
@@ -43,6 +112,23 @@
      no shadow, so the density holds, but the corners stop reading as a terminal
      window. */
   --radius-card: 6px;
+}
+
+/* ---------------------------------------------------------------------------
+   Ageing ramp — an ORDINAL scale, not a categorical one. Receivables buckets
+   have a natural order, so age is encoded as one hue deepening rather than five
+   unrelated colours. The hue is the unfavourable one because the thing being
+   encoded is severity, which is meaning and not decoration.
+
+   Declared once: each step mixes the live --unfavourable and --surface, so both
+   themes are covered without a second set of values.
+   --------------------------------------------------------------------------- */
+:root {
+  --ageing-1: color-mix(in oklab, var(--unfavourable) 22%, var(--surface));
+  --ageing-2: color-mix(in oklab, var(--unfavourable) 40%, var(--surface));
+  --ageing-3: color-mix(in oklab, var(--unfavourable) 58%, var(--surface));
+  --ageing-4: color-mix(in oklab, var(--unfavourable) 78%, var(--surface));
+  --ageing-5: var(--unfavourable);
 }
 
 body {

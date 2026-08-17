@@ -100,6 +100,33 @@ Load via `next/font/google`.
 Layout: dense. 12-column grid, 16px gutters. Cards use a 1px rule, no shadow,
 6px radius. Generous whitespace inside cards, tight spacing between them.
 
+**Amended 2026-08-17 — dark theme (an addition, not a replacement).** The app
+ships light and dark, with an Auto/Light/Dark control in the header; Auto follows
+the OS and is the default. The choice is stored on `<html data-theme>` and
+mirrored to `localStorage`, set by a tiny inline script in `<head>` before first
+paint so there is no flash. The dark values are *selected steps for a dark
+surface*, not an inversion — the light ledger colours are far too dark to sit on
+a dark ground:
+
+| Role | Light | Dark |
+|---|---|---|
+| Ink | `#12161C` | `#EDEFF2` |
+| Paper | `#FAFAF7` | `#0E1013` |
+| Surface | `#FFFFFF` | `#171A1E` |
+| Rule | `#E3E1DA` | `#282D34` |
+| Muted | `#6B6F76` | `#99A1AA` |
+| Unfavourable | `#A8341F` | `#E3495B` |
+| Favourable | `#0F6E5C` | `#2FA98D` |
+| Signal | `#C77700` | `#B98C1E` |
+
+The dark trio was chosen by running a colourblind/contrast validator against the
+dark surface, not by eye. Note unfavourable moves off red-orange toward a truer
+red in dark: the obvious step `#E06A4E` collapses against the gold signal under
+deuteranopia. There is also `--mark-neutral` (light `#12161C`, dark `#7A828C`)
+for large neutral fills such as a waterfall's anchoring totals, because `--ink`
+inverts to near-white and a near-white slab is far too loud. Do not swap dark
+values in without re-validating contrast and separation.
+
 **Amended 2026-08-17 (supersedes the original type and radius spec).** Figures
 were specified in IBM Plex Mono at 2px radius; the result read mechanical —
 `$271.2k` in a monospace at headline size looks like console output rather than a
