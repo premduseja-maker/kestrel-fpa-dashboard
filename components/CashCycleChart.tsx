@@ -16,9 +16,9 @@ import {
 import { days, daysChange, daysShort, monthLong, monthShort } from "@/lib/format";
 import type { CycleDrift, CyclePoint } from "@/lib/metrics/cash";
 import { niceTicks } from "@/lib/ticks";
-import { usePrefersReducedMotion } from "./hooks";
+import { useIsNarrow, usePrefersReducedMotion } from "./hooks";
 
-export const CYCLE_HEIGHT = 360;
+import { CYCLE_HEIGHT } from "./chart-heights";
 
 /**
  * Cash conversion cycle with its three drivers beneath it.
@@ -39,6 +39,7 @@ export function CashCycleChart({
   drift: CycleDrift | null;
 }) {
   const reducedMotion = usePrefersReducedMotion();
+  const narrow = useIsNarrow();
 
   const scale = useMemo(() => {
     const highs = series.map((point) => point.dio + point.dso);
@@ -61,7 +62,7 @@ export function CashCycleChart({
           <XAxis
             dataKey="month"
             tickFormatter={monthShort}
-            interval={2}
+            interval={narrow ? 5 : 2}
             axisLine={{ stroke: "var(--rule)" }}
             tickLine={false}
             tick={{ fill: "var(--muted)", fontSize: 10 }}
@@ -110,7 +111,7 @@ export function CashCycleChart({
           />
 
           <ReferenceLine y={0} stroke="var(--muted)" strokeWidth={1}>
-            {drift && (
+            {drift && !narrow && (
               <Label
                 value={`Cycle ${days(drift.first)} → ${days(
                   drift.last,

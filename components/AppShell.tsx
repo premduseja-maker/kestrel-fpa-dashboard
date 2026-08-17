@@ -77,7 +77,12 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <footer className="border-t border-rule px-4 py-3 sm:px-6">
         <p className="mx-auto max-w-[1400px] text-[10.5px] text-muted">
-          Synthetic demonstration data. Figures in USD.
+          {/* The disclosure is the link: a viewer who wonders whether these are
+              real numbers is already looking at this line. */}
+          <Link href="/about" className="underline underline-offset-2 hover:text-ink">
+            Synthetic demonstration data
+          </Link>
+          . Figures in USD.
         </p>
       </footer>
     </div>

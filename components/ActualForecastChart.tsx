@@ -13,9 +13,9 @@ import {
 } from "recharts";
 import { monthLong, monthShort, usd, usdFull } from "@/lib/format";
 import { niceTicks } from "@/lib/ticks";
-import { usePrefersReducedMotion } from "./hooks";
+import { useIsNarrow, usePrefersReducedMotion } from "./hooks";
 
-export const ACTUAL_FORECAST_HEIGHT = 260;
+import { ACTUAL_FORECAST_HEIGHT } from "./chart-heights";
 
 export interface JoinedPoint {
   month: string;
@@ -43,6 +43,7 @@ export function ActualForecastChart({
   showZero?: boolean;
 }) {
   const reducedMotion = usePrefersReducedMotion();
+  const narrow = useIsNarrow();
 
   if (points.length === 0) return <div style={{ height }} />;
 
@@ -69,7 +70,7 @@ export function ActualForecastChart({
           <XAxis
             dataKey="month"
             tickFormatter={monthShort}
-            interval={3}
+            interval={narrow ? 7 : 3}
             axisLine={{ stroke: "var(--rule)" }}
             tickLine={false}
             tick={{ fill: "var(--muted)", fontSize: 10 }}

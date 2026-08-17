@@ -1,19 +1,39 @@
 "use client";
 
+import dynamic from "next/dynamic";
+import {
+  CATEGORY_MARGIN_HEIGHT,
+  SCATTER_HEIGHT,
+  WATERFALL_HEIGHT,
+} from "@/components/chart-heights";
+
+/* Loaded on demand — see the note on the summary screen. */
+const CategoryMarginChart = dynamic(
+  () => import("@/components/CategoryMarginChart").then((x) => x.CategoryMarginChart),
+  { ssr: false, loading: () => <Skeleton height={CATEGORY_MARGIN_HEIGHT} /> },
+);
+const WaterfallChart = dynamic(
+  () => import("@/components/WaterfallChart").then((x) => x.WaterfallChart),
+  { ssr: false, loading: () => <Skeleton height={WATERFALL_HEIGHT} /> },
+);
+const DiscountScatter = dynamic(
+  () => import("@/components/DiscountScatter").then((x) => x.DiscountScatter),
+  { ssr: false, loading: () => <Skeleton height={SCATTER_HEIGHT} /> },
+);
+const SkuTable = dynamic(
+  () => import("@/components/SkuTable").then((x) => x.SkuTable),
+  { ssr: false, loading: () => <Skeleton height={420} /> },
+);
+
 import { useEffect, useMemo, useState } from "react";
 import { Card, CardHeader } from "@/components/Card";
-import {
-  CategoryMarginChart,
-  CATEGORY_MARGIN_HEIGHT,
-} from "@/components/CategoryMarginChart";
+import { ChartWithTable, FiguresTable } from "@/components/ChartWithTable";
+
 import { useDashboard } from "@/components/DashboardProvider";
-import { DiscountScatter, SCATTER_HEIGHT } from "@/components/DiscountScatter";
+
 import { Interpretation } from "@/components/Interpretation";
-import { SkuTable } from "@/components/SkuTable";
-import {
-  WaterfallChart,
-  WATERFALL_HEIGHT,
-} from "@/components/WaterfallChart";
+
+
 import { data, type SkuMaster, type SkuMonth } from "@/lib/data";
 import {
   count,
@@ -139,9 +159,45 @@ export default function MarginScreen() {
           />
           <div className="min-w-0 px-2 pb-4 pt-2 sm:px-3">
             {model ? (
-              <CategoryMarginChart
-                series={model.series}
-                groupDelta={model.narrative?.groupDelta ?? null}
+              <ChartWithTable
+                label="gross margin by category"
+                chart={
+                  <CategoryMarginChart
+                    series={model.series}
+                    groupDelta={model.narrative?.groupDelta ?? null}
+                  />
+                }
+                table={
+                  <FiguresTable
+                    caption="Monthly gross margin by category and for the group"
+                    rows={model.series}
+                    rowKey={(row) => row.month}
+                    maxHeight={CATEGORY_MARGIN_HEIGHT}
+                    columns={[
+                      { header: "Month", cell: (row) => monthShort(row.month) },
+                      {
+                        header: "Apparel",
+                        align: "right",
+                        cell: (row) => pct(row.Apparel),
+                      },
+                      {
+                        header: "Hardgoods",
+                        align: "right",
+                        cell: (row) => pct(row.Hardgoods),
+                      },
+                      {
+                        header: "Accessories",
+                        align: "right",
+                        cell: (row) => pct(row.Accessories),
+                      },
+                      {
+                        header: "Group",
+                        align: "right",
+                        cell: (row) => pct(row.group),
+                      },
+                    ]}
+                  />
+                }
               />
             ) : (
               <Skeleton height={CATEGORY_MARGIN_HEIGHT} />

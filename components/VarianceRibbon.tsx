@@ -55,7 +55,7 @@ export function VarianceRibbon() {
             <p className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-[12px] leading-snug sm:text-[13px]">
               {/* Sentence case, not uppercase with wide tracking — letterspaced
                   caps read as a terminal banner rather than a finding. */}
-              <span className="heading text-[13px] text-signal sm:text-[14px]">
+              <span className="heading text-[13px] text-signal-ink sm:text-[14px]">
                 {driver.category} margin
               </span>
               <Separator />

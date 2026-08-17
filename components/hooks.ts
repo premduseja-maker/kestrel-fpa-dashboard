@@ -31,3 +31,37 @@ function getServerSnapshot(): boolean {
 export function usePrefersReducedMotion(): boolean {
   return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }
+
+/* -------------------------------------------------------------------------- */
+
+const NARROW_QUERY = "(max-width: 640px)";
+
+function subscribeNarrow(onStoreChange: () => void): () => void {
+  const query = window.matchMedia(NARROW_QUERY);
+  query.addEventListener("change", onStoreChange);
+  return () => query.removeEventListener("change", onStoreChange);
+}
+
+function getNarrowSnapshot(): boolean {
+  return window.matchMedia(NARROW_QUERY).matches;
+}
+
+function getNarrowServerSnapshot(): boolean {
+  return false;
+}
+
+/**
+ * True on a phone-width viewport.
+ *
+ * Charts use this to switch to a simplified variant rather than shrink the
+ * desktop one: at 390px, eight date labels along an axis collapse into an
+ * unreadable smear, and per-bar value labels overlap each other. Thinning the
+ * labels is a different chart, not a smaller one.
+ */
+export function useIsNarrow(): boolean {
+  return useSyncExternalStore(
+    subscribeNarrow,
+    getNarrowSnapshot,
+    getNarrowServerSnapshot,
+  );
+}

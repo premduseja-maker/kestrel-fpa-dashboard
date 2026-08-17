@@ -16,9 +16,9 @@ import {
 import type { BridgeBar } from "@/lib/metrics/core";
 import { usd, usdFull } from "@/lib/format";
 import { niceTicks } from "@/lib/ticks";
-import { usePrefersReducedMotion } from "./hooks";
+import { useIsNarrow, usePrefersReducedMotion } from "./hooks";
 
-export const WATERFALL_HEIGHT = 320;
+import { WATERFALL_HEIGHT } from "./chart-heights";
 
 /**
  * A waterfall: two anchoring totals with signed contributions between them.
@@ -49,6 +49,7 @@ export function WaterfallChart({
   totalMeaning?: string;
 }) {
   const reducedMotion = usePrefersReducedMotion();
+  const narrow = useIsNarrow();
 
   const { rows, scale } = useMemo(() => {
     const real = niceTicks(floor, ceiling);
@@ -134,12 +135,17 @@ export function WaterfallChart({
                 }
               />
             ))}
-            <LabelList
-              dataKey="span"
-              content={(props: unknown) => (
-                <BarValueLabel {...(props as BarLabelProps)} rows={rows} />
-              )}
-            />
+            {/* At phone width seven value labels collide into each other, so the
+                figures are dropped and the detail table beside the chart carries
+                them instead. Fewer marks, not smaller ones. */}
+            {!narrow && (
+              <LabelList
+                dataKey="span"
+                content={(props: unknown) => (
+                  <BarValueLabel {...(props as BarLabelProps)} rows={rows} />
+                )}
+              />
+            )}
           </Bar>
         </BarChart>
       </ResponsiveContainer>

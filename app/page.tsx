@@ -1,17 +1,31 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useMemo } from "react";
 import { Card, CardHeader } from "@/components/Card";
-import { KpiStrip, KpiStripSkeleton } from "@/components/KpiStrip";
 import {
-  WaterfallChart,
-  WATERFALL_HEIGHT,
-} from "@/components/WaterfallChart";
-import {
-  RevenueEbitdaChart,
   REVENUE_EBITDA_HEIGHT,
-} from "@/components/RevenueEbitdaChart";
+  WATERFALL_HEIGHT,
+} from "@/components/chart-heights";
+import { KpiStrip, KpiStripSkeleton } from "@/components/KpiStrip";
 import { useDashboard } from "@/components/DashboardProvider";
+
+/* Charts are loaded on demand. Nothing above the fold needs Recharts, and the
+   charts only render once the data has arrived anyway, so keeping the charting
+   library out of the hydration path costs nothing visually and is the single
+   biggest lever on this page's time-to-interactive. The heights come from a
+   separate module so the skeleton can reserve the right space without importing
+   the component — and so without pulling the library back in. */
+const RevenueEbitdaChart = dynamic(
+  () =>
+    import("@/components/RevenueEbitdaChart").then((m) => m.RevenueEbitdaChart),
+  { ssr: false, loading: () => <ChartSkeleton height={REVENUE_EBITDA_HEIGHT} /> },
+);
+
+const WaterfallChart = dynamic(
+  () => import("@/components/WaterfallChart").then((m) => m.WaterfallChart),
+  { ssr: false, loading: () => <ChartSkeleton height={WATERFALL_HEIGHT} /> },
+);
 import { monthLong, monthShort, usdFull } from "@/lib/format";
 import { ebitdaBridge, findMonth } from "@/lib/metrics/core";
 import { executiveKpis } from "@/lib/metrics/executive";

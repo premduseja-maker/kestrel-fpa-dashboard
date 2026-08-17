@@ -1,6 +1,11 @@
 "use client";
 
-import { monthShort } from "@/lib/format";
+import {
+  coverMonths,
+  coverMonthsLong,
+  monthShort,
+  statistic,
+} from "@/lib/format";
 import type { HeatRow } from "@/lib/metrics/cash";
 
 /**
@@ -78,9 +83,13 @@ export function InventoryHeatMap({
                     outline: "2px solid var(--surface)",
                     outlineOffset: -1,
                   }}
-                  title={`${row.category} · ${monthShort(cell.month)} · ${cell.monthsOnHand.toFixed(1)} months cover`}
+                  title={`${row.category} · ${monthShort(
+                    cell.month,
+                  )} · ${coverMonthsLong(cell.monthsOnHand)} cover`}
                 >
-                  {cell.monthsOnHand.toFixed(1)}
+                  {/* Bare to one decimal: at 24 columns the unit would triple
+                      the grid's width, and the legend beneath carries it. */}
+                  {statistic(cell.monthsOnHand, 1)}
                 </td>
               ))}
             </tr>
@@ -91,7 +100,7 @@ export function InventoryHeatMap({
       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-[10.5px] text-muted">
         <span>Months of cover</span>
         <span className="flex items-center gap-1">
-          <span className="fig">{min.toFixed(1)}</span>
+          <span className="fig">{coverMonths(min)}</span>
           <span
             aria-hidden="true"
             className="h-2.5 w-24 border border-rule"
@@ -99,11 +108,10 @@ export function InventoryHeatMap({
               background: `linear-gradient(to right, ${mix(min)}, ${mix(max)})`,
             }}
           />
-          <span className="fig">{max.toFixed(1)}</span>
+          <span className="fig">{coverMonths(max)}</span>
         </span>
         <span>
-          Target cover <span className="fig">{targetCover.toFixed(1)}</span>{" "}
-          months
+          Target cover <span className="fig">{coverMonthsLong(targetCover)}</span>
         </span>
       </div>
     </div>

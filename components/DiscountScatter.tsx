@@ -18,7 +18,7 @@ import { linearFit, type ScatterPoint } from "@/lib/metrics/margin";
 import { niceTicks } from "@/lib/ticks";
 import { usePrefersReducedMotion } from "./hooks";
 
-export const SCATTER_HEIGHT = 340;
+import { SCATTER_HEIGHT } from "./chart-heights";
 
 /**
  * Discount against gross margin, one point per SKU per month, split by year.

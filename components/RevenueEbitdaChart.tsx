@@ -17,9 +17,9 @@ import type { PLMonth } from "@/lib/data";
 import { monthLong, monthShort, pctChange, usd, usdFull } from "@/lib/format";
 import { relativeChange, shiftMonth, ttm } from "@/lib/metrics/core";
 import { niceTicks } from "@/lib/ticks";
-import { usePrefersReducedMotion } from "./hooks";
+import { useIsNarrow, usePrefersReducedMotion } from "./hooks";
 
-export const REVENUE_EBITDA_HEIGHT = 320;
+import { REVENUE_EBITDA_HEIGHT } from "./chart-heights";
 
 const AXIS = {
   stroke: "var(--rule)",
@@ -40,6 +40,7 @@ const AXIS = {
  */
 export function RevenueEbitdaChart({ pl }: { pl: PLMonth[] }) {
   const reducedMotion = usePrefersReducedMotion();
+  const narrow = useIsNarrow();
 
   const model = useMemo(() => {
     if (pl.length === 0) return null;
@@ -110,7 +111,7 @@ export function RevenueEbitdaChart({ pl }: { pl: PLMonth[] }) {
           <CartesianGrid stroke="var(--rule)" vertical={false} />
 
           {/* The divergence, shaded and named on the plot itself. */}
-          {annotation && (
+          {annotation && !narrow && (
             <ReferenceArea
               yAxisId="revenue"
               x1={regionStart}
@@ -133,7 +134,7 @@ export function RevenueEbitdaChart({ pl }: { pl: PLMonth[] }) {
           <XAxis
             dataKey="month"
             tickFormatter={monthShort}
-            interval={2}
+            interval={narrow ? 5 : 2}
             axisLine={AXIS}
             tickLine={false}
             tick={AXIS.tick}

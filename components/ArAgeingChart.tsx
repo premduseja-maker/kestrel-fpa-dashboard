@@ -12,21 +12,14 @@ import {
 import { monthLong, monthShort, pct, usd, usdFull } from "@/lib/format";
 import { AGEING_BUCKETS, type AgeingPoint } from "@/lib/metrics/cash";
 import { niceTicks } from "@/lib/ticks";
-import { usePrefersReducedMotion } from "./hooks";
+import { BUCKET_FILL } from "./ageing-legend";
+import { useIsNarrow, usePrefersReducedMotion } from "./hooks";
 
-export const AGEING_HEIGHT = 320;
-
-/** Ordinal ramp: one hue deepening with age. Order matters, hue identity does not. */
-const BUCKET_FILL: Record<string, string> = {
-  current: "var(--ageing-1)",
-  d_1_30: "var(--ageing-2)",
-  d_31_60: "var(--ageing-3)",
-  d_61_90: "var(--ageing-4)",
-  d_90_plus: "var(--ageing-5)",
-};
+import { AGEING_HEIGHT } from "./chart-heights";
 
 export function ArAgeingChart({ series }: { series: AgeingPoint[] }) {
   const reducedMotion = usePrefersReducedMotion();
+  const narrow = useIsNarrow();
 
   if (series.length === 0) return <div style={{ height: AGEING_HEIGHT }} />;
 
@@ -41,7 +34,7 @@ export function ArAgeingChart({ series }: { series: AgeingPoint[] }) {
           <XAxis
             dataKey="month"
             tickFormatter={monthShort}
-            interval={2}
+            interval={narrow ? 5 : 2}
             axisLine={{ stroke: "var(--rule)" }}
             tickLine={false}
             tick={{ fill: "var(--muted)", fontSize: 10 }}
@@ -129,23 +122,5 @@ function AgeingTooltip({
         ))}
       </dl>
     </div>
-  );
-}
-
-/** Ordered scale legend, since the buckets are a ramp rather than categories. */
-export function AgeingLegend() {
-  return (
-    <ul className="flex flex-wrap items-center gap-x-3 gap-y-1.5 p-0 text-[11px] text-muted">
-      {AGEING_BUCKETS.map((bucket) => (
-        <li key={bucket.key} className="flex items-center gap-1.5">
-          <span
-            aria-hidden="true"
-            className="h-2.5 w-2.5 rounded-sm border border-rule"
-            style={{ background: BUCKET_FILL[bucket.key] }}
-          />
-          {bucket.label}
-        </li>
-      ))}
-    </ul>
   );
 }

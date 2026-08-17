@@ -12,10 +12,17 @@
   --paper: #fafaf7;
   --surface: #ffffff;
   --rule: #e3e1da;
-  --muted: #6b6f76;
+  /* Darkened from #6b6f76, which measured 4.48:1 on the ribbon's wash — just
+     under the 4.5 needed for body text. 5.05:1 there, 5.69:1 on white. */
+  --muted: #63676d;
   --unfavourable: #a8341f;
   --favourable: #0f6e5c;
   --signal: #c77700;
+
+  /* Signal as TEXT, not as a mark. The accent itself measures 3.07:1 on its own
+     wash, so small text set in it fails; this darker step of the same hue reads
+     5.10:1 there and 5.75:1 on white. Marks keep --signal. */
+  --signal-ink: #945800;
 
   /* Washes derived from the above, for reference bands and hover states only. */
   --signal-wash: rgba(199, 119, 0, 0.07);
@@ -64,6 +71,7 @@
     --surface: #171a1e;
     --rule: #282d34;
     --muted: #99a1aa;
+    --signal-ink: #d9a441;
     --unfavourable: #e3495b;
     --favourable: #2fa98d;
     --signal: #b98c1e;
@@ -83,6 +91,7 @@
   --surface: #171a1e;
   --rule: #282d34;
   --muted: #99a1aa;
+  --signal-ink: #d9a441;
   --unfavourable: #e3495b;
   --favourable: #2fa98d;
   --signal: #b98c1e;
@@ -102,6 +111,7 @@
   --color-unfavourable: var(--unfavourable);
   --color-favourable: var(--favourable);
   --color-signal: var(--signal);
+  --color-signal-ink: var(--signal-ink);
   --color-signal-wash: var(--signal-wash);
   --color-ink-wash: var(--ink-wash);
   --color-mark-neutral: var(--mark-neutral);
@@ -164,6 +174,26 @@ body {
 .recharts-wrapper text {
   font-family: var(--font-plex-sans), system-ui, sans-serif;
   font-variant-numeric: tabular-nums;
+}
+
+/* ---------------------------------------------------------------------------
+   Mobile legibility floor.
+
+   The brief asks for density, and on a desktop the 10.5–11.5px scale is what
+   makes a screen readable at a glance. On a phone it stops being dense and
+   starts being small, so the floor is raised to 12px below 640px. Density is a
+   desktop affordance; legibility is not negotiable anywhere.
+
+   Recharts' own tick text is deliberately left at 10px: it is chart furniture
+   rather than prose, and enlarging it re-creates the axis-label collisions that
+   the simplified mobile variants exist to prevent.
+   --------------------------------------------------------------------------- */
+@media (max-width: 640px) {
+  .text-\[10\.5px\],
+  .text-\[11px\],
+  .text-\[11\.5px\] {
+    font-size: 12px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

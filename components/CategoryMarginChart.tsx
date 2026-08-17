@@ -20,9 +20,9 @@ import {
   type CategoryMarginPoint,
 } from "@/lib/metrics/margin";
 import { niceTicks } from "@/lib/ticks";
-import { usePrefersReducedMotion } from "./hooks";
+import { useIsNarrow, usePrefersReducedMotion } from "./hooks";
 
-export const CATEGORY_MARGIN_HEIGHT = 340;
+import { CATEGORY_MARGIN_HEIGHT } from "./chart-heights";
 
 /**
  * Three category margins plus the group average as a dashed line.
@@ -53,6 +53,7 @@ export function CategoryMarginChart({
   groupDelta: number | null;
 }) {
   const reducedMotion = usePrefersReducedMotion();
+  const narrow = useIsNarrow();
 
   const model = useMemo(() => {
     if (series.length === 0) return null;
@@ -96,7 +97,7 @@ export function CategoryMarginChart({
           {/* The annotation rides a full-width invisible band anchored top-left.
               Hanging it off the shaded band centred it over a narrow span at the
               right edge, where the text ran off the plot. */}
-          {spread && (
+          {spread && !narrow && (
             <ReferenceArea
               x1={series[0].month}
               x2={last.month}
@@ -122,7 +123,7 @@ export function CategoryMarginChart({
           <XAxis
             dataKey="month"
             tickFormatter={monthShort}
-            interval={2}
+            interval={narrow ? 5 : 2}
             axisLine={{ stroke: "var(--rule)" }}
             tickLine={false}
             tick={{ fill: "var(--muted)", fontSize: 10 }}

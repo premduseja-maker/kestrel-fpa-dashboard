@@ -1,14 +1,33 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { AgeingLegend, ArAgeingChart, AGEING_HEIGHT } from "@/components/ArAgeingChart";
+import dynamic from "next/dynamic";
+import { AgeingLegend } from "@/components/ageing-legend";
+import {
+  AGEING_HEIGHT,
+  CYCLE_HEIGHT,
+  FORECAST_HEIGHT,
+} from "@/components/chart-heights";
+
+/* Loaded on demand — see the note on the summary screen. */
+const CashCycleChart = dynamic(
+  () => import("@/components/CashCycleChart").then((x) => x.CashCycleChart),
+  { ssr: false, loading: () => <Skeleton height={CYCLE_HEIGHT} /> },
+);
+const CashForecastChart = dynamic(
+  () =>
+    import("@/components/CashForecastChart").then((x) => x.CashForecastChart),
+  { ssr: false, loading: () => <Skeleton height={FORECAST_HEIGHT} /> },
+);
+const ArAgeingChart = dynamic(
+  () => import("@/components/ArAgeingChart").then((x) => x.ArAgeingChart),
+  { ssr: false, loading: () => <Skeleton height={AGEING_HEIGHT} /> },
+);
 import { AssumptionsPanel } from "@/components/AssumptionsPanel";
 import { Card, CardHeader } from "@/components/Card";
-import { CashCycleChart, CYCLE_HEIGHT } from "@/components/CashCycleChart";
-import {
-  CashForecastChart,
-  FORECAST_HEIGHT,
-} from "@/components/CashForecastChart";
+import { ChartWithTable, FiguresTable } from "@/components/ChartWithTable";
+
+
 import { CustomerAgeingTable, ExcessStockTable } from "@/components/CashTables";
 import { useDashboard } from "@/components/DashboardProvider";
 import { InventoryHeatMap } from "@/components/InventoryHeatMap";
@@ -25,12 +44,15 @@ import {
   days,
   monthLong,
   monthShort,
+  pct,
   usd,
   usdFull,
 } from "@/lib/format";
 import {
+  AGEING_BUCKETS,
   ageingSeries,
   cashAssumptions,
+  type AgeingPoint,
   customerAgeing,
   cycleDrift,
   cycleSeries,
@@ -168,7 +190,43 @@ export default function CashScreen() {
           />
           <div className="min-w-0 px-2 pb-4 pt-2 sm:px-3">
             {model ? (
-              <CashCycleChart series={model.cycle} drift={model.drift} />
+              <ChartWithTable
+                label="cash conversion cycle"
+                chart={
+                  <CashCycleChart series={model.cycle} drift={model.drift} />
+                }
+                table={
+                  <FiguresTable
+                    caption="Cash conversion cycle and its drivers, by month"
+                    rows={model.cycle}
+                    rowKey={(row) => row.month}
+                    maxHeight={CYCLE_HEIGHT}
+                    columns={[
+                      { header: "Month", cell: (row) => monthShort(row.month) },
+                      {
+                        header: "Inventory days",
+                        align: "right",
+                        cell: (row) => days(row.dio),
+                      },
+                      {
+                        header: "Receivable days",
+                        align: "right",
+                        cell: (row) => days(row.dso),
+                      },
+                      {
+                        header: "Payable days",
+                        align: "right",
+                        cell: (row) => days(row.dpo),
+                      },
+                      {
+                        header: "Cash cycle",
+                        align: "right",
+                        cell: (row) => days(row.ccc),
+                      },
+                    ]}
+                  />
+                }
+              />
             ) : (
               <Skeleton height={CYCLE_HEIGHT} />
             )}
@@ -270,7 +328,36 @@ export default function CashScreen() {
           />
           <div className="min-w-0 px-2 pb-4 pt-2 sm:px-3">
             {model?.ageing ? (
-              <ArAgeingChart series={model.ageing.series} />
+              <ChartWithTable
+                label="receivables ageing"
+                chart={<ArAgeingChart series={model.ageing.series} />}
+                table={
+                  <FiguresTable
+                    caption="Receivables by ageing bucket and month"
+                    rows={model.ageing.series}
+                    rowKey={(row) => row.month}
+                    maxHeight={AGEING_HEIGHT}
+                    columns={[
+                      { header: "Month", cell: (row) => monthShort(row.month) },
+                      ...AGEING_BUCKETS.map((bucket) => ({
+                        header: bucket.label,
+                        align: "right" as const,
+                        cell: (row: AgeingPoint) => usdFull(row[bucket.key]),
+                      })),
+                      {
+                        header: "Total",
+                        align: "right",
+                        cell: (row) => usdFull(row.total),
+                      },
+                      {
+                        header: "Past due",
+                        align: "right",
+                        cell: (row) => pct(row.pastDueShare),
+                      },
+                    ]}
+                  />
+                }
+              />
             ) : (
               <Skeleton height={AGEING_HEIGHT} />
             )}

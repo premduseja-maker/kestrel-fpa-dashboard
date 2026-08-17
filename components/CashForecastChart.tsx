@@ -13,9 +13,9 @@ import {
 import { usd, usdFull } from "@/lib/format";
 import type { CashAssumptions, ForecastWeek } from "@/lib/metrics/cash";
 import { niceTicks } from "@/lib/ticks";
-import { usePrefersReducedMotion } from "./hooks";
+import { useIsNarrow, usePrefersReducedMotion } from "./hooks";
 
-export const FORECAST_HEIGHT = 300;
+import { FORECAST_HEIGHT } from "./chart-heights";
 
 /**
  * Closing cash over the next thirteen weeks on the stated assumptions.
@@ -32,6 +32,7 @@ export function CashForecastChart({
   assumptions: CashAssumptions;
 }) {
   const reducedMotion = usePrefersReducedMotion();
+  const narrow = useIsNarrow();
 
   if (weeks.length === 0) return <div style={{ height: FORECAST_HEIGHT }} />;
 
@@ -63,7 +64,7 @@ export function CashForecastChart({
             axisLine={{ stroke: "var(--rule)" }}
             tickLine={false}
             tick={{ fill: "var(--muted)", fontSize: 10 }}
-            interval={0}
+            interval={narrow ? 2 : 0}
           />
           <YAxis
             domain={[scale.lo, scale.hi]}

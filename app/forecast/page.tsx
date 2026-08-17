@@ -1,12 +1,18 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  ActualForecastChart,
-  ACTUAL_FORECAST_HEIGHT,
-  type JoinedPoint,
-} from "@/components/ActualForecastChart";
+import dynamic from "next/dynamic";
+import { ACTUAL_FORECAST_HEIGHT } from "@/components/chart-heights";
+import type { JoinedPoint } from "@/components/ActualForecastChart";
+
+/* Loaded on demand — see the note on the summary screen. */
+const ActualForecastChart = dynamic(
+  () =>
+    import("@/components/ActualForecastChart").then((x) => x.ActualForecastChart),
+  { ssr: false, loading: () => <Skeleton height={ACTUAL_FORECAST_HEIGHT} /> },
+);
 import { Card, CardHeader } from "@/components/Card";
+import { ChartWithTable, FiguresTable } from "@/components/ChartWithTable";
 import { useDashboard } from "@/components/DashboardProvider";
 import { DriverSliders } from "@/components/DriverSliders";
 import { ForecastPnlTable } from "@/components/ForecastPnlTable";
@@ -18,7 +24,7 @@ import {
   type InventoryMonth,
   type SkuMonth,
 } from "@/lib/data";
-import { monthLong, usd } from "@/lib/format";
+import { monthLong, monthShort, usd, usdFull } from "@/lib/format";
 import {
   driverSpecs,
   driversFrom,
@@ -237,9 +243,15 @@ export default function ForecastScreen() {
             />
             <div className="min-w-0 px-2 pb-3 pt-1 sm:px-3">
               {series ? (
-                <ActualForecastChart
-                  points={series.ebitda}
-                  boundaryMonth={series.boundary}
+                <ChartWithTable
+                  label="EBITDA, actual and forecast"
+                  chart={
+                    <ActualForecastChart
+                      points={series.ebitda}
+                      boundaryMonth={series.boundary}
+                    />
+                  }
+                  table={<JoinTable rows={series.ebitda} label="EBITDA" />}
                 />
               ) : (
                 <Skeleton height={ACTUAL_FORECAST_HEIGHT} />
@@ -260,10 +272,16 @@ export default function ForecastScreen() {
             />
             <div className="min-w-0 px-2 pb-3 pt-1 sm:px-3">
               {series ? (
-                <ActualForecastChart
-                  points={series.cash}
-                  boundaryMonth={series.boundary}
-                  showZero
+                <ChartWithTable
+                  label="closing cash, actual and forecast"
+                  chart={
+                    <ActualForecastChart
+                      points={series.cash}
+                      boundaryMonth={series.boundary}
+                      showZero
+                    />
+                  }
+                  table={<JoinTable rows={series.cash} label="Closing cash" />}
                 />
               ) : (
                 <Skeleton height={ACTUAL_FORECAST_HEIGHT} />
@@ -323,6 +341,44 @@ export default function ForecastScreen() {
         </p>
       </section>
     </div>
+  );
+}
+
+/**
+ * Table twin for the joined actual/forecast charts. The basis column is what a
+ * table can say that a dashed line cannot: which rows are record and which are
+ * projection, in words.
+ */
+function JoinTable({
+  rows,
+  label,
+}: {
+  rows: JoinedPoint[];
+  label: string;
+}) {
+  return (
+    <FiguresTable
+      caption={`${label} by month, actual then forecast`}
+      rows={rows}
+      rowKey={(row) => row.month}
+      maxHeight={ACTUAL_FORECAST_HEIGHT}
+      columns={[
+        { header: "Month", cell: (row) => monthShort(row.month) },
+        {
+          header: label,
+          align: "right",
+          cell: (row) => {
+            const value = row.actual ?? row.forecast;
+            return value === null || value === undefined ? "—" : usdFull(value);
+          },
+        },
+        {
+          header: "Basis",
+          align: "right",
+          cell: (row) => (row.actual === null ? "Forecast" : "Actual"),
+        },
+      ]}
+    />
   );
 }
 
