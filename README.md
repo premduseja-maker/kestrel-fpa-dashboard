@@ -5,7 +5,9 @@ brand. Four screens carry one argument: revenue grew 15.4% while EBITDA fell fro
 $155k to $13k, apparel discounting is the cause, and recovering that discipline is
 worth roughly $171k of EBITDA and $218k of cash over twelve months.
 
-The data is synthetic. See `/about` in the running app.
+The data is synthetic. See [/about](https://kestrel-dashboard-mu.vercel.app/about) in the running app.
+
+**Live:** https://kestrel-dashboard-mu.vercel.app
 
 ## Running it
 
