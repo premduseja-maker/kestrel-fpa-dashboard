@@ -1,26 +1,208 @@
 @import "tailwindcss";
 
+/* ---------------------------------------------------------------------------
+   The ledger palette from CLAUDE.md, light theme. The dark theme follows below.
+
+   Favourable and unfavourable are reserved for variance meaning. Nothing
+   decorative may wear them, or they stop carrying information.
+   --------------------------------------------------------------------------- */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --ink: #12161c;
+  --paper: #fafaf7;
+  --surface: #ffffff;
+  --rule: #e3e1da;
+  /* Darkened from #6b6f76, which measured 4.48:1 on the ribbon's wash — just
+     under the 4.5 needed for body text. 5.05:1 there, 5.69:1 on white. */
+  --muted: #63676d;
+  --unfavourable: #a8341f;
+  --favourable: #0f6e5c;
+  --signal: #c77700;
+
+  /* Signal as TEXT, not as a mark. The accent itself measures 3.07:1 on its own
+     wash, so small text set in it fails; this darker step of the same hue reads
+     5.10:1 there and 5.75:1 on white. Marks keep --signal. */
+  --signal-ink: #945800;
+
+  /* Washes derived from the above, for reference bands and hover states only. */
+  --signal-wash: rgba(199, 119, 0, 0.07);
+  --ink-wash: rgba(18, 22, 28, 0.04);
+
+  /* Neutral fill for large filled marks that carry no favourable/unfavourable
+     meaning — the anchoring totals on a waterfall. Distinct from --ink because
+     ink inverts to near-white in dark mode, and a near-white block reads as a
+     glaring slab rather than a quiet anchor. Strokes may still use ink. */
+  --mark-neutral: #12161c;
+
+  color-scheme: light;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+/* ---------------------------------------------------------------------------
+   Dark theme.
+
+   These are *selected* steps for the dark surface, not an inversion of the light
+   values: the light favourable/unfavourable/signal are far too dark to sit on a
+   dark ground. The three were chosen by running the palette validator against
+   surface #171A1E and iterating —
+
+     favourable  #2FA98D   unfavourable #E3495B   signal #B98C1E
+
+   which passes the dark lightness band, the chroma floor, the normal-vision
+   floor (worst pair 17.1) and 3:1 contrast on the surface. Its CVD separation
+   sits at 6.5 deuteranopia, inside the 6-8 band that is permitted only with
+   secondary encoding — satisfied throughout: every waterfall bar carries its
+   value as a direct label, the scatter's fitted line is a stroke over dots
+   rather than a same-shape mark, and each chart has a figures table beside it.
+
+   Note that unfavourable moved off red-orange toward a truer red for dark. The
+   obvious step, #E06A4E, collapsed against the gold signal under deuteranopia
+   (ΔE 4.2) because amber and red-orange are adjacent hues.
+
+   Declared under both the media query and the [data-theme] scope so an explicit
+   choice wins in either direction.
+   --------------------------------------------------------------------------- */
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    --ink: #edeff2;
+    --paper: #0e1013;
+    --surface: #171a1e;
+    --rule: #282d34;
+    --muted: #99a1aa;
+    --signal-ink: #d9a441;
+    --unfavourable: #e3495b;
+    --favourable: #2fa98d;
+    --signal: #b98c1e;
+
+    --mark-neutral: #7a828c;
+
+    --signal-wash: rgba(185, 140, 30, 0.12);
+    --ink-wash: rgba(255, 255, 255, 0.06);
   }
 }
 
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --ink: #edeff2;
+  --paper: #0e1013;
+  --surface: #171a1e;
+  --rule: #282d34;
+  --muted: #99a1aa;
+  --signal-ink: #d9a441;
+  --unfavourable: #e3495b;
+  --favourable: #2fa98d;
+  --signal: #b98c1e;
+
+  --mark-neutral: #7a828c;
+
+  --signal-wash: rgba(185, 140, 30, 0.12);
+  --ink-wash: rgba(255, 255, 255, 0.06);
+}
+
+@theme inline {
+  --color-ink: var(--ink);
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-rule: var(--rule);
+  --color-muted: var(--muted);
+  --color-unfavourable: var(--unfavourable);
+  --color-favourable: var(--favourable);
+  --color-signal: var(--signal);
+  --color-signal-ink: var(--signal-ink);
+  --color-signal-wash: var(--signal-wash);
+  --color-ink-wash: var(--ink-wash);
+  --color-mark-neutral: var(--mark-neutral);
+
+  --font-sans: var(--font-plex-sans);
+
+  /* Cards: a 6px radius rather than the near-square 2px. Same hairline rule and
+     no shadow, so the density holds, but the corners stop reading as a terminal
+     window. */
+  --radius-card: 6px;
+}
+
+/* ---------------------------------------------------------------------------
+   Ageing ramp — an ORDINAL scale, not a categorical one. Receivables buckets
+   have a natural order, so age is encoded as one hue deepening rather than five
+   unrelated colours. The hue is the unfavourable one because the thing being
+   encoded is severity, which is meaning and not decoration.
+
+   Declared once: each step mixes the live --unfavourable and --surface, so both
+   themes are covered without a second set of values.
+   --------------------------------------------------------------------------- */
+:root {
+  --ageing-1: color-mix(in oklab, var(--unfavourable) 22%, var(--surface));
+  --ageing-2: color-mix(in oklab, var(--unfavourable) 40%, var(--surface));
+  --ageing-3: color-mix(in oklab, var(--unfavourable) 58%, var(--surface));
+  --ageing-4: color-mix(in oklab, var(--unfavourable) 78%, var(--surface));
+  --ageing-5: var(--unfavourable);
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-plex-sans), system-ui, -apple-system, sans-serif;
+}
+
+/* Every figure: tabular numerals so columns align down the page, but set in the
+   UI sans rather than a monospace. Monospaced figures at headline sizes read
+   mechanical — "$271.2k" in mono looks like console output, not a financial
+   statement. tabular-nums keeps the alignment that matters without the
+   typewriter texture. */
+.fig {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  letter-spacing: -0.006em;
+}
+
+/* Headings: tight tracking, weight 600. No display serif anywhere. */
+.heading {
+  font-weight: 600;
+  letter-spacing: -0.011em;
+}
+
+:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Recharts draws its own SVG text; keep it on the UI sans with tabular figures. */
+.recharts-wrapper text {
+  font-family: var(--font-plex-sans), system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------------------------------------------------------------------------
+   Mobile legibility floor.
+
+   The brief asks for density, and on a desktop the 10.5–11.5px scale is what
+   makes a screen readable at a glance. On a phone it stops being dense and
+   starts being small, so the floor is raised to 12px below 640px. Density is a
+   desktop affordance; legibility is not negotiable anywhere.
+
+   Recharts' own tick text is deliberately left at 10px: it is chart furniture
+   rather than prose, and enlarging it re-creates the axis-label collisions that
+   the simplified mobile variants exist to prevent.
+   --------------------------------------------------------------------------- */
+@media (max-width: 640px) {
+  .text-\[10\.5px\],
+  .text-\[11px\],
+  .text-\[11\.5px\] {
+    font-size: 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

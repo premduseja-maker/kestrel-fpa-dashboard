@@ -1,69 +1,218 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import dynamic from "next/dynamic";
+import { useMemo } from "react";
+import { Card, CardHeader } from "@/components/Card";
+import {
+  REVENUE_EBITDA_HEIGHT,
+  WATERFALL_HEIGHT,
+} from "@/components/chart-heights";
+import { KpiStrip, KpiStripSkeleton } from "@/components/KpiStrip";
+import { useDashboard } from "@/components/DashboardProvider";
+
+/* Charts are loaded on demand. Nothing above the fold needs Recharts, and the
+   charts only render once the data has arrived anyway, so keeping the charting
+   library out of the hydration path costs nothing visually and is the single
+   biggest lever on this page's time-to-interactive. The heights come from a
+   separate module so the skeleton can reserve the right space without importing
+   the component — and so without pulling the library back in. */
+const RevenueEbitdaChart = dynamic(
+  () =>
+    import("@/components/RevenueEbitdaChart").then((m) => m.RevenueEbitdaChart),
+  { ssr: false, loading: () => <ChartSkeleton height={REVENUE_EBITDA_HEIGHT} /> },
+);
+
+const WaterfallChart = dynamic(
+  () => import("@/components/WaterfallChart").then((m) => m.WaterfallChart),
+  { ssr: false, loading: () => <ChartSkeleton height={WATERFALL_HEIGHT} /> },
+);
+import { monthLong, monthShort, usdFull } from "@/lib/format";
+import { ebitdaBridge, findMonth } from "@/lib/metrics/core";
+import { executiveKpis } from "@/lib/metrics/executive";
+
+export default function ExecutiveSummary() {
+  const { status, error, pl, cashflow, budget, selectedMonth } = useDashboard();
+
+  const model = useMemo(() => {
+    if (status !== "ready" || !selectedMonth) return null;
+
+    const actualRow = findMonth(pl, selectedMonth);
+    const budgetRow = findMonth(budget, selectedMonth);
+
+    return {
+      kpis: executiveKpis(pl, cashflow, selectedMonth),
+      markerIndex: pl.findIndex((row) => row.month === selectedMonth),
+      bridge:
+        actualRow && budgetRow ? ebitdaBridge(actualRow, budgetRow) : null,
+    };
+  }, [status, pl, cashflow, budget, selectedMonth]);
+
+  if (status === "error") {
+    return (
+      <Card className="p-5">
+        <h1 className="heading text-[14px] text-unfavourable">
+          Could not load the data
+        </h1>
+        <p className="mt-1.5 text-[12px] text-muted">
+          {error ?? "Unknown error"}. The datasets are served from{" "}
+          <code>public/data</code>; check they are present and reload.
+        </p>
+      </Card>
+    );
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+    /* min-w-0 on every grid child: a grid item defaults to min-width:auto, so it
+       refuses to shrink below its content's intrinsic width and a chart pushes
+       the whole page into a horizontal scroll at 390px. */
+    <div className="grid grid-cols-12 gap-4">
+      <header className="col-span-12 min-w-0">
+        <h1 className="heading text-[17px] text-ink">Executive summary</h1>
+        <p className="mt-0.5 text-[12px] text-muted">
+          {selectedMonth
+            ? `Reporting month ${monthLong(selectedMonth)}`
+            : "Loading reporting month"}
+        </p>
+      </header>
+
+      <section className="col-span-12 min-w-0" aria-label="Headline measures">
+        {model ? (
+          <KpiStrip kpis={model.kpis} markerIndex={model.markerIndex} />
+        ) : (
+          <KpiStripSkeleton />
+        )}
+      </section>
+
+      <section className="col-span-12 min-w-0">
+        <Card>
+          <CardHeader
+            title="Revenue against EBITDA"
+            subtitle="Monthly, all 24 months. Left axis net revenue, right axis EBITDA — two scales, so read each line against its own axis and take the movements, not the crossing point, as the story."
+          />
+          <div className="min-w-0 px-2 pb-4 pt-2 sm:px-3">
+            {model ? (
+              <RevenueEbitdaChart pl={pl} />
+            ) : (
+              <ChartSkeleton height={REVENUE_EBITDA_HEIGHT} />
+            )}
+          </div>
+        </Card>
+      </section>
+
+      <section className="col-span-12 min-w-0 lg:col-span-7">
+        <Card>
+          <CardHeader
+            title={
+              selectedMonth
+                ? `Budget to actual EBITDA — ${monthShort(selectedMonth)}`
+                : "Budget to actual EBITDA"
+            }
+            subtitle="Four effects, summing exactly to the variance: revenue at budget margin, margin rate on actual revenue, ad spend, and all other opex."
+          />
+          <div className="min-w-0 px-2 pb-4 pt-2 sm:px-3">
+            {model?.bridge ? (
+              <WaterfallChart
+                bars={model.bridge.bars}
+                floor={model.bridge.floor}
+                ceiling={model.bridge.ceiling}
+                shortLabels={{
+                  "Budget EBITDA": "Budget",
+                  "Actual EBITDA": "Actual",
+                }}
+                totalMeaning="EBITDA level"
+              />
+            ) : model ? (
+              <NoBudget />
+            ) : (
+              <ChartSkeleton height={WATERFALL_HEIGHT} />
+            )}
+          </div>
+        </Card>
+      </section>
+
+      <section className="col-span-12 min-w-0 lg:col-span-5">
+        <Card className="h-full">
+          <CardHeader
+            title="Variance detail"
+            subtitle="The same bridge as figures, so every value is readable without hovering."
+          />
+          <div className="min-w-0 overflow-x-auto px-4 pb-5 pt-3 sm:px-5">
+            {model?.bridge ? (
+              <table className="w-full border-collapse text-[12px]">
+                <caption className="sr-only">
+                  Budget EBITDA to actual EBITDA, by effect
+                </caption>
+                <tbody className="fig">
+                  {model.bridge.bars.map((bar) => (
+                    <tr key={bar.label} className="border-b border-rule last:border-0">
+                      <th
+                        scope="row"
+                        className={`py-1.5 pr-3 text-left font-normal ${
+                          bar.kind === "total" ? "text-ink" : "text-muted"
+                        }`}
+                        style={{ fontFamily: "var(--font-plex-sans)" }}
+                      >
+                        {bar.label}
+                      </th>
+                      <td
+                        className={`py-1.5 text-right ${
+                          bar.kind === "total"
+                            ? "font-semibold text-ink"
+                            : bar.favourable
+                              ? "text-favourable"
+                              : "text-unfavourable"
+                        }`}
+                      >
+                        {usdFull(bar.value)}
+                      </td>
+                    </tr>
+                  ))}
+                  <tr>
+                    <th
+                      scope="row"
+                      className="py-2 pr-3 text-left font-semibold text-ink"
+                      style={{ fontFamily: "var(--font-plex-sans)" }}
+                    >
+                      Total variance
+                    </th>
+                    <td
+                      className={`py-2 text-right font-semibold ${
+                        model.bridge.totalVariance >= 0
+                          ? "text-favourable"
+                          : "text-unfavourable"
+                      }`}
+                    >
+                      {usdFull(model.bridge.totalVariance)}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            ) : model ? (
+              <NoBudget />
+            ) : (
+              <ChartSkeleton height={WATERFALL_HEIGHT} />
+            )}
+          </div>
+        </Card>
+      </section>
     </div>
+  );
+}
+
+function ChartSkeleton({ height }: { height: number }) {
+  return (
+    <div
+      className="animate-pulse rounded-sm bg-ink-wash"
+      style={{ height, borderRadius: 2 }}
+      aria-hidden="true"
+    />
+  );
+}
+
+function NoBudget() {
+  return (
+    <p className="text-[12px] text-muted">
+      No budget row for the selected month, so no bridge can be drawn.
+    </p>
   );
 }
