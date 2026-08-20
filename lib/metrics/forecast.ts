@@ -72,6 +72,14 @@ export interface Baseline extends Drivers {
   dpo: number;
   /** Trailing monthly net revenue, for the "vs recent actual" readouts. */
   monthlyNetRevenue: number;
+  /**
+   * Apparel unit economics over the same trailing window, used by the discount
+   * breakeven. Kept as price and cost per unit rather than as margins so the
+   * breakeven can be recomputed at any discount without re-reading the SKU file.
+   */
+  apparelUnits: number;
+  apparelGrossPrice: number;
+  apparelUnitCost: number;
 }
 
 /**
@@ -122,6 +130,8 @@ export function forecastBaseline(
   );
   const apparelGross = sum(apparelRows.map((r) => r.gross_revenue));
   const apparelNet = sum(apparelRows.map((r) => r.net_revenue));
+  const apparelUnits = sum(apparelRows.map((r) => r.units_sold));
+  const apparelCogs = sum(apparelRows.map((r) => r.cogs));
 
   const coverFor = (predicate: (row: InventoryMonth) => boolean) => {
     const rows = inventory.filter(
@@ -175,6 +185,9 @@ export function forecastBaseline(
       : lastCash.dso,
     dpo: lastCash.dpo,
     monthlyNetRevenue: netRevenue,
+    apparelUnits,
+    apparelGrossPrice: apparelUnits ? apparelGross / apparelUnits : 0,
+    apparelUnitCost: apparelUnits ? apparelCogs / apparelUnits : 0,
   };
 }
 
@@ -559,5 +572,89 @@ export function recoverOutcome(
     recoveredEbitda: after.totals.ebitda,
     baseClosingCash: before.closingCash,
     recoveredClosingCash: after.closingCash,
+  };
+}
+
+/* -------------------------------------------------------------------------- */
+/* Discount breakeven                                                         */
+/* -------------------------------------------------------------------------- */
+
+export interface DiscountBreakeven {
+  fromDiscount: number;
+  toDiscount: number;
+  unitGpBefore: number;
+  unitGpAfter: number;
+  /** Proportional rise in gross profit per unit. */
+  unitGpUplift: number;
+  /**
+   * The share of apparel units that could be lost before the discount cut stops
+   * paying for itself, on gross profit.
+   */
+  volumeTolerance: number;
+  /**
+   * The same threshold once freight and processing are also treated as falling
+   * with volume — a more forgiving figure, quoted as the softer bound.
+   */
+  contributionTolerance: number;
+  applicable: boolean;
+}
+
+/**
+ * How far apparel volume could fall before cutting the discount stops paying.
+ *
+ * This exists to answer the obvious challenge to the Recover figure: "your
+ * recovery assumes I lose no sales when I stop discounting." Rather than invent
+ * a price elasticity — which would mean guessing a coefficient and dressing the
+ * guess up as analysis — it inverts the question into one the unit economics can
+ * answer exactly.
+ *
+ * At a lower discount each unit carries more gross profit, so fewer units are
+ * needed to earn the same. With unit gross profit g(d) = price x (1 - d) - cost,
+ * total gross profit is unchanged when
+ *
+ *     Q_after / Q_before = g(before) / g(after)
+ *
+ * so the tolerable volume loss is 1 - g(before)/g(after). No assumption about
+ * how demand actually responds is required; the figure states the threshold and
+ * leaves the judgement about whether volume would fall that far to the reader,
+ * who knows their own market.
+ *
+ * The gross-profit form is deliberately the headline because it is the stricter
+ * of the two: it ignores that freight, processing and acquisition spend would
+ * also fall with the lost units. `contributionTolerance` adds the two
+ * revenue-variable cost lines back in; the real threshold is at least that
+ * forgiving, since ad spend would fall too and is not modelled here.
+ */
+export function discountBreakeven(
+  baseline: Baseline,
+  fromDiscount: number,
+  toDiscount: number,
+): DiscountBreakeven {
+  const price = baseline.apparelGrossPrice;
+  const cost = baseline.apparelUnitCost;
+  const variableRate = baseline.freightRate + baseline.processingRate;
+
+  const unitGp = (d: number) => price * (1 - d) - cost;
+  const unitContribution = (d: number) =>
+    price * (1 - d) * (1 - variableRate) - cost;
+
+  const before = unitGp(fromDiscount);
+  const after = unitGp(toDiscount);
+
+  // Only meaningful when the discount actually falls and both margins are live.
+  const applicable = toDiscount < fromDiscount && before > 0 && after > 0;
+
+  return {
+    fromDiscount,
+    toDiscount,
+    unitGpBefore: before,
+    unitGpAfter: after,
+    unitGpUplift: before > 0 ? after / before - 1 : 0,
+    volumeTolerance: applicable ? 1 - before / after : 0,
+    contributionTolerance:
+      applicable && unitContribution(toDiscount) > 0
+        ? 1 - unitContribution(fromDiscount) / unitContribution(toDiscount)
+        : 0,
+    applicable,
   };
 }

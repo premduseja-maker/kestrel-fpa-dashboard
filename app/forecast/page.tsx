@@ -26,6 +26,7 @@ import {
 } from "@/lib/data";
 import { monthLong, monthShort, usd, usdFull } from "@/lib/format";
 import {
+  discountBreakeven,
   driverSpecs,
   driversFrom,
   forecastBaseline,
@@ -127,6 +128,20 @@ export default function ForecastScreen() {
     [baseline, drivers],
   );
 
+  /* Measured from wherever the discount slider currently sits to the preset
+     target, so the threshold tracks the reader rather than a fixed baseline. */
+  const breakeven = useMemo(
+    () =>
+      baseline && drivers
+        ? discountBreakeven(
+            baseline,
+            drivers.apparelDiscount,
+            RECOVER_PRESET.apparelDiscount,
+          )
+        : null,
+    [baseline, drivers],
+  );
+
   const recoverApplied = Boolean(
     drivers &&
       Math.abs(drivers.apparelDiscount - RECOVER_PRESET.apparelDiscount) < 1e-9 &&
@@ -202,6 +217,7 @@ export default function ForecastScreen() {
       <section className="col-span-12 min-w-0">
         {recover ? (
           <RecoverBanner
+            breakeven={breakeven}
             outcome={recover}
             applied={recoverApplied}
             onApply={onApplyRecover}

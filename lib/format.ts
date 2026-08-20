@@ -66,6 +66,18 @@ export function usdFull(value: number): string {
   return accounting(value, magnitude);
 }
 
+/**
+ * A per-unit amount, to the cent: `$24.84`.
+ *
+ * Whole dollars are right for statement lines but wrong here — unit margins are
+ * small enough that rounding $24.84 to $25 loses a tenth of the number and reads
+ * as an estimate rather than a measurement.
+ */
+export function usdUnit(value: number): string {
+  const magnitude = `$${Math.abs(value).toFixed(2)}`;
+  return accounting(value, magnitude);
+}
+
 /** A ratio held as a fraction (0.442) as a percentage to one decimal: `44.2%`. */
 export function pct(fraction: number): string {
   return `${(fraction * 100).toFixed(1)}%`;

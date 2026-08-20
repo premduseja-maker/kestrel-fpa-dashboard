@@ -1,8 +1,9 @@
 "use client";
 
-import { coverMonths, pct, usd, usdFull } from "@/lib/format";
+import { coverMonths, pct, usd, usdFull, usdUnit } from "@/lib/format";
 import {
   RECOVER_PRESET,
+  type DiscountBreakeven,
   type RecoverOutcome,
 } from "@/lib/metrics/forecast";
 
@@ -17,10 +18,12 @@ import {
  */
 export function RecoverBanner({
   outcome,
+  breakeven,
   applied,
   onApply,
 }: {
   outcome: RecoverOutcome;
+  breakeven: DiscountBreakeven | null;
   applied: boolean;
   onApply: () => void;
 }) {
@@ -57,12 +60,34 @@ export function RecoverBanner({
           type="button"
           onClick={onApply}
           disabled={applied}
-          className="shrink-0 border border-signal bg-signal px-3.5 py-2 text-[12.5px] font-semibold text-[var(--surface)] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+          className="shrink-0 border border-signal bg-signal px-3.5 py-2 text-[12.5px] font-semibold text-on-signal transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           style={{ borderRadius: 5 }}
         >
           {applied ? "Recover applied" : "Apply Recover"}
         </button>
       </div>
+
+      {breakeven?.applicable && (
+        /* The answer to "but I would lose sales". It sits directly under the
+           prize because it is the first challenge anyone numerate will make. */
+        <p className="mt-4 border-t border-rule pt-3 text-[13px] leading-relaxed text-ink sm:text-[14px]">
+          It stops paying for itself only if apparel volume falls more than{" "}
+          <span className="fig font-semibold text-signal-ink">
+            {pct(breakeven.volumeTolerance)}
+          </span>
+          .{" "}
+          <span className="text-muted">
+            Cutting the discount lifts gross profit per unit from{" "}
+            <span className="fig">{usdUnit(breakeven.unitGpBefore)}</span> to{" "}
+            <span className="fig">{usdUnit(breakeven.unitGpAfter)}</span>, so the
+            same gross profit needs that many fewer units. Computed from the unit
+            margins, with no assumption about how demand responds. This is the
+            strict form — freight, processing and acquisition spend would fall
+            with the lost units too, which pushes the true threshold past{" "}
+            <span className="fig">{pct(breakeven.contributionTolerance)}</span>.
+          </span>
+        </p>
+      )}
 
       <dl className="mt-4 grid grid-cols-2 gap-x-6 gap-y-1.5 border-t border-rule pt-3 text-[11.5px] sm:grid-cols-4">
         <Figure label="EBITDA, current" value={usdFull(outcome.baseEbitda)} />
@@ -83,10 +108,9 @@ export function RecoverBanner({
       <p className="mt-3 text-[10.5px] leading-relaxed text-muted">
         <span className="font-semibold text-ink">What this assumes.</span> Volume
         is held constant when the discount changes — no price elasticity is
-        modelled. So this is what the discounting is costing at today&rsquo;s
-        volumes, and it is an upper bound: if cutting the discount loses units,
-        the recovery is smaller by the margin on those units. Treat it as the size
-        of the prize worth testing, not a number to put in a budget.
+        modelled, because fitting one would mean guessing a coefficient and
+        presenting the guess as analysis. The breakeven above answers the same
+        challenge without needing that guess.
       </p>
     </div>
   );

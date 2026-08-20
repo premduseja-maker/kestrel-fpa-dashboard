@@ -89,9 +89,14 @@ These are the decisions a reviewer is most likely to want to check.
 - **The forecast is calibrated.** At default driver values a zero-growth month
   reproduces the trailing three-month revenue and EBITDA to the cent, so every
   delta measures the change rather than a gap between model and record.
-- **No price elasticity is modelled.** Volume is held constant when the discount
-  moves, so the Recover figure is an upper bound. The caveat sits under the
-  number in the UI, not in a footnote.
+- **No price elasticity is modelled** — and the screen answers the objection
+  that follows from it rather than merely disclosing it. Volume is held constant
+  when the discount moves, so the Recover figure assumes no lost sales. Instead
+  of fitting an elasticity (a guessed coefficient dressed as analysis), the
+  banner states the breakeven: apparel volume would have to fall more than
+  **42.2%** before the cut stops paying for itself, computed directly from unit
+  margins. That is the strict gross-profit form; variable costs would fall with
+  the lost units too, pushing the real threshold past 45.5%.
 - **`capex` and `interest_paid` are positive outflows** in `cashflow_monthly`:
   `net_change = ebitda + working_capital_change − capex − interest_paid`.
 - **`ar_ageing` is the wholesale book only** while 68.6% of revenue is DTC.

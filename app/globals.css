@@ -24,6 +24,11 @@
      5.10:1 there and 5.75:1 on white. Marks keep --signal. */
   --signal-ink: #945800;
 
+  /* Text sitting ON the amber fill (the Apply Recover button). A single dark
+     ink serves both themes — 5.24:1 on the light signal, 5.90:1 on the dark one
+     — whereas the white it replaced measured 3.46:1 in light mode and failed. */
+  --on-signal: #12161c;
+
   /* Washes derived from the above, for reference bands and hover states only. */
   --signal-wash: rgba(199, 119, 0, 0.07);
   --ink-wash: rgba(18, 22, 28, 0.04);
@@ -112,6 +117,7 @@
   --color-favourable: var(--favourable);
   --color-signal: var(--signal);
   --color-signal-ink: var(--signal-ink);
+  --color-on-signal: var(--on-signal);
   --color-signal-wash: var(--signal-wash);
   --color-ink-wash: var(--ink-wash);
   --color-mark-neutral: var(--mark-neutral);

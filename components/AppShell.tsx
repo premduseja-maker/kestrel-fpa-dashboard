@@ -47,7 +47,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                     <Link
                       href={screen.href}
                       aria-current={active ? "page" : undefined}
-                      className={`block px-2.5 py-1 text-[12.5px] transition-colors ${
+                      className={`block px-2.5 py-1.5 text-[12.5px] transition-colors ${
                         active
                           ? "bg-ink-wash font-semibold text-ink"
                           : "text-muted hover:text-ink"
