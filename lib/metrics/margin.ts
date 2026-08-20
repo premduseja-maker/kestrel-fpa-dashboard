@@ -12,18 +12,17 @@ import { marginPct, relativeChange, type BridgeBar } from "./core";
 /**
  * Screen 2 analytics: where the margin went, and why.
  *
- * SOURCE NOTE, which the screen states too. Two datasets describe category
- * margin and they do not agree:
- *   - pl_monthly carries revenue_ and gp_ per category and foots to the group
- *     P&L exactly. Over FY1->FY2 it shows apparel 41.0% -> 35.4% and hardgoods
- *     47.9% -> 50.6%.
- *   - sku_monthly, aggregated, shows apparel 36.0% -> 25.0% and hardgoods flat
- *     at 44.5%. Its monthly net revenue also does not tie to the P&L.
- * The P&L is authoritative for the category trend, so chart (a) and every margin
- * percentage in the narrative come from pl_monthly. The bridge, the SKU table and
- * the scatter are necessarily SKU-level and come from sku_monthly. The two are
- * therefore not directly comparable, and the screen says so rather than letting a
- * reader assume a bug.
+ * SOURCE NOTE. Category margin appears on two bases, and with the refreshed
+ * datasets they now agree exactly: aggregated sku_monthly net revenue ties to
+ * pl_monthly month by month (worst gap 0.000%), and category margins match to
+ * the decimal — apparel 41.0% -> 35.4%, hardgoods 47.9% -> 50.6% either way.
+ *
+ * Chart (a) still reads pl_monthly while the bridge, table and scatter read
+ * sku_monthly, because each is the natural grain for its question — not because
+ * the two disagree. An earlier revision of the data had them diverging badly
+ * (sku_monthly put apparel at 36.0% -> 25.0% and hardgoods flat at 44.5%), and
+ * this screen carried a warning saying so. That warning has been removed: it is
+ * no longer true, and a stale caveat is worse than none.
  */
 
 export interface FiscalYears {
@@ -202,16 +201,20 @@ export interface ReturnsExposure {
  * order shifts value between those three bars; the total is unaffected.
  *
  * `unit cost` is a sixth name the brief did not list. It is kept because a named
- * effect that is silently dropped becomes a plug, and because its smallness is
- * itself a finding: per-SKU costs barely moved, so the effect is only -$3.82,
- * even though *average* unit cost across the range rose from $40.58 to $44.85.
- * That aggregate rise is composition — more apparel, which costs more per unit —
- * and this decomposition correctly books it to mix rather than to cost inflation.
+ * effect that is silently dropped becomes a plug — and on the current data it is
+ * far from negligible: unit cost is the second largest bar on the chart.
  *
- * Measured result: discount -$218,051 against volume +$145,670 and mix +$58,522,
- * netting to -$13,715 with a residual of exactly zero. Note that mix is positive
- * in dollars while pulling the group margin *percentage* down: apparel carries a
- * higher absolute gross profit per unit than accessories despite a lower rate.
+ * Measured on the refreshed datasets: discount -$243,497 against volume
+ * +$187,939, unit cost +$100,576 and mix +$80,480, netting to +$121,771 with a
+ * residual of exactly zero. Two things worth reading off that. Gross profit rose
+ * even as the group margin *rate* fell, because volume and mix added more than
+ * discounting took away. And mix is positive in dollars while pulling the rate
+ * down: apparel carries a higher absolute gross profit per unit than accessories
+ * despite a lower percentage, so shifting units toward it lifts dollars and
+ * depresses the ratio at the same time.
+ *
+ * (An earlier revision of the data put unit cost at -$3.82 and the total at
+ * -$13,715. If those numbers appear anywhere, they are stale.)
  */
 export function grossProfitBridge(
   skuRows: SkuMonth[],

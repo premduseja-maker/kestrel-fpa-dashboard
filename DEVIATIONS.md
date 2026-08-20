@@ -39,12 +39,11 @@ than reconciled away.
   (1 − discount_pct)` exactly and COGS follows units sold, so recorded gross
   profit is *independent* of `units_returned` — a returns effect would be
   structurally zero. Returns are quantified as an exposure instead.
-- **A sixth effect, unit cost, was added** so the bridge foots with no plug. It
-  is worth only −$3.82, which is itself the finding: the rise in average unit
-  cost is composition, not cost inflation.
-- **Category margins come from `pl_monthly`, not `sku_monthly`.** The two
-  disagree — apparel 41.0→35.4 against 36.0→25.0, hardgoods rising against
-  flat. The P&L foots to the group and is treated as authoritative.
+- **A sixth effect, unit cost, was added** so the bridge foots with no plug. On
+  the current data it is +$100,576 — the second largest bar on the chart — so
+  dropping it would have left the bridge short by that much. (On an earlier data
+  revision the same effect was −$3.82, which is a good illustration of why a
+  named effect should never be dropped for looking small.)
 - **The Variance Ribbon's share is of summed absolute category movement**, not a
   signed share of the net. Signed, apparel reads 165% of the total, because the
   other categories offset it.
@@ -100,8 +99,12 @@ Stated because the screens report the data, not the brief.
 
 | CLAUDE.md says | The data says |
 |---|---|
-| Apparel margin 42.8% → 33.5% | 41.0% → 35.4% (P&L basis) |
+| Apparel margin 42.8% → 33.5% | 41.0% → 35.4% |
 | Hardgoods 47.1% → 51.3% | 47.9% → 50.6% |
 | Blended CAC $28 → $45 | $32 → $42 |
-| Cash conversion cycle 74 → 124 days | 79 → 118 days |
+| Cash conversion cycle 74 → 124 days | 79 → 120 days |
 | Revenue +15.4%, EBITDA $155k → $13k | Exactly as stated |
+
+Note the apparel and hardgoods figures now read the same on the P&L and on the
+SKU data; an earlier data revision had them diverging, and the "(P&L basis)"
+qualifier that used to sit in this table is no longer needed.

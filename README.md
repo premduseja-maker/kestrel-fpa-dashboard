@@ -76,9 +76,13 @@ largest driver of the current month's EBITDA variance, computed live.
 These are the decisions a reviewer is most likely to want to check.
 
 - **The gross profit bridge foots exactly.** Volume, mix, price, discount and
-  unit cost sum to the movement with a residual of `$0.00`. The rate effects are
-  a sequential substitution in the order price → discount → cost; a different
-  order shifts value between those three bars but not the total.
+  unit cost sum to the movement with a residual of `$0.00`. On the current data
+  that is discount −$243,497 against volume +$187,939, unit cost +$100,576 and
+  mix +$80,480, netting to **+$121,771** — gross profit rose in dollars even as
+  the group margin *rate* fell 2.3pts, because volume and mix added more than
+  discounting took away. The rate effects are a sequential substitution in the
+  order price → discount → cost; a different order shifts value between those
+  three bars but not the total.
 - **COGS is driven by units, not revenue** — in the bridge and in the forecast.
   As a percentage of revenue, cutting a discount drags cost down with price and
   the discount effect cancels itself out entirely.
@@ -100,11 +104,17 @@ Surfaced in the UI rather than reconciled away.
 
 | Inconsistency | Where it is stated |
 |---|---|
-| `pl_monthly` and `sku_monthly` disagree on category margin (apparel 41.0→35.4 vs 36.0→25.0; hardgoods rising vs flat) | Source note on `/margin` |
 | Stated DSO (42.3d) does not tie to the AR balance, which implies 27.8d against wholesale revenue | Assumptions panel on `/cash` |
 | All ten customers share one ageing profile — same past-due share, same shift, zero spread | Note above the customer table |
 | Returns are not deducted from revenue or COGS, so recorded gross profit is independent of them | Returns note beside the gross profit bridge |
 | `budget_monthly` is derived from actuals (`ad_spend` is exactly 0.86 × actual every month), so variance is one-sided by construction | — |
+
+**Resolved by a data refresh.** An earlier revision had `sku_monthly` failing to
+tie to `pl_monthly` — every month out, by up to 5.9%, with category margins
+disagreeing badly (apparel 41.0→35.4 on the P&L against 36.0→25.0 on SKU data).
+The refreshed files reconcile exactly, so the warnings that used to sit on
+`/margin` and `/about` have been removed rather than left standing. A caveat that
+is no longer true costs more credibility than it buys.
 
 ## Stack
 

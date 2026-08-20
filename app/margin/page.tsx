@@ -399,12 +399,13 @@ export default function MarginScreen() {
       <section className="col-span-12 min-w-0">
         <p className="text-[11px] leading-relaxed text-muted">
           <span className="font-semibold text-ink">Sources.</span> Category margin
-          percentages above come from <code>pl_monthly</code>, which foots to the
-          group P&amp;L. The bridge, the SKU table and the scatter are SKU-level
-          and come from <code>sku_monthly</code>. The two datasets do not
-          reconcile — aggregated <code>sku_monthly</code> puts apparel margin
-          lower and hardgoods flat — so figures are not comparable across that
-          line, and the P&amp;L is treated as authoritative for category rates.
+          percentages above come from <code>pl_monthly</code>; the bridge, the SKU
+          table and the scatter are SKU-level and come from{" "}
+          <code>sku_monthly</code>. The two tie out — aggregated SKU net revenue
+          matches the P&amp;L month by month, and category margins agree to the
+          decimal — so figures are directly comparable across that line. Each
+          reads from the grain that suits its question rather than from the one
+          that happens to agree.
         </p>
       </section>
     </div>

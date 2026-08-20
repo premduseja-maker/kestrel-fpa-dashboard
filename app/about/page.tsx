@@ -27,11 +27,17 @@ export default function AboutPage() {
           <p className="mt-2.5 text-[13px] leading-relaxed text-muted">
             Because it is generated, the files carry a few internal
             inconsistencies. Rather than smooth those over, the screens name them
-            where they matter — the source note under the margin decomposition,
-            the collection-period note beside the cash forecast, and the
-            receivables ageing note are all pointing at real disagreements
-            between files. Naming them is the point: an analyst who quietly
-            reconciles away a discrepancy is an analyst you cannot check.
+            where they matter — the collection-period note beside the cash
+            forecast and the receivables ageing note both point at real
+            disagreements between files. Naming them is the point: an analyst who
+            quietly reconciles away a discrepancy is an analyst you cannot check.
+          </p>
+          <p className="mt-2.5 text-[13px] leading-relaxed text-muted">
+            The same discipline applies in reverse. An earlier revision of the
+            data had SKU-level revenue failing to tie to the P&amp;L, and this
+            site said so prominently. The refreshed files reconcile exactly, so
+            that warning has been removed rather than left standing as a caveat
+            that sounds careful and is simply out of date.
           </p>
         </Card>
 
