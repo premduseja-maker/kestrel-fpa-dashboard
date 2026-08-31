@@ -12,6 +12,7 @@ const ActualForecastChart = dynamic(
   { ssr: false, loading: () => <Skeleton height={ACTUAL_FORECAST_HEIGHT} /> },
 );
 import { Card, CardHeader } from "@/components/Card";
+import { CollapsibleCard } from "@/components/CollapsibleCard";
 import { ChartWithTable, FiguresTable } from "@/components/ChartWithTable";
 import { useDashboard } from "@/components/DashboardProvider";
 import { DriverSliders } from "@/components/DriverSliders";
@@ -252,11 +253,11 @@ export default function ForecastScreen() {
       {/* (b) */}
       <section className="col-span-12 min-w-0 lg:col-span-7">
         <div className="flex h-full flex-col gap-4">
-          <Card>
-            <CardHeader
-              title="EBITDA — 24 months actual, 12 forecast"
-              subtitle="The forecast is a separate dashed series, never a continuation of the same line."
-            />
+          <CollapsibleCard
+            title="EBITDA — 24 months actual, 12 forecast"
+            subtitle="The forecast is a separate dashed series, never a continuation of the same line."
+            defaultOpen
+          >
             <div className="min-w-0 px-2 pb-3 pt-1 sm:px-3">
               {series ? (
                 <ChartWithTable
@@ -273,19 +274,18 @@ export default function ForecastScreen() {
                 <Skeleton height={ACTUAL_FORECAST_HEIGHT} />
               )}
             </div>
-          </Card>
+          </CollapsibleCard>
 
-          <Card>
-            <CardHeader
-              title="Closing cash"
-              subtitle={
+          <CollapsibleCard
+            title="Closing cash"
+            subtitle={
                 result
                   ? `Low point ${usd(result.troughCash)} in ${monthLong(
                       result.troughMonth,
                     )}.`
                   : undefined
-              }
-            />
+            }
+          >
             <div className="min-w-0 px-2 pb-3 pt-1 sm:px-3">
               {series ? (
                 <ChartWithTable
@@ -303,17 +303,16 @@ export default function ForecastScreen() {
                 <Skeleton height={ACTUAL_FORECAST_HEIGHT} />
               )}
             </div>
-          </Card>
+          </CollapsibleCard>
         </div>
       </section>
 
       {/* (c) */}
       <section className="col-span-12 min-w-0">
-        <Card>
-          <CardHeader
-            title="What moves EBITDA most"
-            subtitle="Twelve-month EBITDA impact of each driver at ±10% of its own value."
-          />
+        <CollapsibleCard
+          title="What moves EBITDA most"
+          subtitle="Twelve-month EBITDA impact of each driver at ±10% of its own value."
+        >
           <div className="min-w-0 px-4 pb-5 pt-3 sm:px-5">
             {tornadoRows.length > 0 ? (
               <TornadoChart rows={tornadoRows} />
@@ -321,16 +320,15 @@ export default function ForecastScreen() {
               <Skeleton height={280} />
             )}
           </div>
-        </Card>
+        </CollapsibleCard>
       </section>
 
       {/* (a) */}
       <section className="col-span-12 min-w-0">
-        <Card>
-          <CardHeader
-            title="Forward profit and loss"
-            subtitle="Twelve months on the current settings, with the full-year total. Costs are shown negative so each column adds down to EBITDA."
-          />
+        <CollapsibleCard
+          title="Forward profit and loss"
+          subtitle="Twelve months on the current settings, with the full-year total. Costs are shown negative so each column adds down to EBITDA."
+        >
           <div className="min-w-0 px-2 pb-5 pt-3 sm:px-3">
             {result ? (
               <ForecastPnlTable result={result} />
@@ -338,7 +336,7 @@ export default function ForecastScreen() {
               <Skeleton height={400} />
             )}
           </div>
-        </Card>
+        </CollapsibleCard>
       </section>
 
       <section className="col-span-12 min-w-0">

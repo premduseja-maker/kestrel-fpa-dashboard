@@ -16,7 +16,7 @@ import {
 import { monthShort, pct } from "@/lib/format";
 import { linearFit, type ScatterPoint } from "@/lib/metrics/margin";
 import { niceTicks } from "@/lib/ticks";
-import { usePrefersReducedMotion } from "./hooks";
+import { useIsNarrow, usePrefersReducedMotion } from "./hooks";
 
 import { SCATTER_HEIGHT } from "./chart-heights";
 
@@ -28,6 +28,7 @@ import { SCATTER_HEIGHT } from "./chart-heights";
  */
 export function DiscountScatter({ points }: { points: ScatterPoint[] }) {
   const reducedMotion = usePrefersReducedMotion();
+  const narrow = useIsNarrow();
 
   const model = useMemo(() => {
     if (points.length === 0) return null;
@@ -52,7 +53,13 @@ export function DiscountScatter({ points }: { points: ScatterPoint[] }) {
   return (
     <div style={{ height: SCATTER_HEIGHT }}>
       <ResponsiveContainer width="100%" height="100%">
-        <ScatterChart margin={{ top: 12, right: 16, bottom: 26, left: 4 }}>
+        <ScatterChart
+          margin={
+            narrow
+              ? { top: 8, right: 10, bottom: 26, left: 0 }
+              : { top: 12, right: 16, bottom: 26, left: 4 }
+          }
+        >
           <CartesianGrid stroke="var(--rule)" />
 
           <XAxis
@@ -94,7 +101,11 @@ export function DiscountScatter({ points }: { points: ScatterPoint[] }) {
               style={{ textAnchor: "middle" }}
             />
           </YAxis>
-          <ZAxis range={[26, 26]} />
+          {/* Smaller marks on a phone: the plot loses roughly two thirds of its
+              area, so points at desktop size merge into a solid mass and the
+              shape of the relationship — the whole point of the chart — is lost
+              under the overlap. */}
+          <ZAxis range={narrow ? [11, 11] : [26, 26]} />
 
           <Tooltip content={<ScatterTooltip />} />
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import {
   coverMonths,
   coverMonthsLong,
@@ -7,6 +8,7 @@ import {
   statistic,
 } from "@/lib/format";
 import type { HeatRow } from "@/lib/metrics/cash";
+import { useIsNarrow } from "./hooks";
 
 /**
  * Months of cover by category and month.
@@ -38,10 +40,31 @@ export function InventoryHeatMap({
   };
 
   const months = rows[0]?.cells.map((cell) => cell.month) ?? [];
+  const narrow = useIsNarrow();
+  const scroller = useRef<HTMLDivElement>(null);
+
+  /**
+   * All 24 months are rendered on a phone, but the view starts at the right-hand
+   * end so the six most recent are what the owner sees first — those are the
+   * ones that describe the position now, and history is a scroll to the left.
+   *
+   * Squeezing 24 columns into 390px would give each about 13px, which is
+   * narrower than the figure printed inside it.
+   */
+  useEffect(() => {
+    const node = scroller.current;
+    if (!node || !narrow) return;
+    node.scrollLeft = node.scrollWidth;
+  }, [narrow, rows]);
 
   return (
-    <div className="overflow-x-auto">
-      <table className="border-collapse text-[10.5px]">
+    <div>
+      <div className="hscroll" ref={scroller} tabIndex={0} role="region"
+           aria-label="Months of inventory cover by category">
+      <table
+        className="border-collapse text-[10.5px]"
+        style={narrow ? { minWidth: months.length * 46 + 76 } : undefined}
+      >
         <caption className="sr-only">
           Months of inventory cover by category and month
         </caption>
@@ -55,14 +78,19 @@ export function InventoryHeatMap({
                 key={month}
                 scope="col"
                 className="px-1 py-1 text-center font-medium text-muted"
+                style={narrow ? { minWidth: 46 } : undefined}
               >
-                {index % 3 === 0 || index === months.length - 1
+                {/* Every third month on desktop; on a phone the columns are
+                    wide enough that each can carry its own label. */}
+                {narrow || index % 3 === 0 || index === months.length - 1
                   ? monthShort(month)
                   : ""}
               </th>
             ))}
           </tr>
         </thead>
+        {/* every third month is labelled on desktop; on a phone the columns are
+            wide enough that every one can be */}
         <tbody className="fig">
           {rows.map((row) => (
             <tr key={row.category}>
@@ -96,6 +124,11 @@ export function InventoryHeatMap({
           ))}
         </tbody>
       </table>
+      </div>
+
+      <p className="mt-1.5 text-[11px] text-muted sm:hidden">
+        Showing the last six months — scroll left for all {months.length}
+      </p>
 
       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-[10.5px] text-muted">
         <span>Months of cover</span>

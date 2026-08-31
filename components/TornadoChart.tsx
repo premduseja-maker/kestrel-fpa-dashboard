@@ -3,6 +3,7 @@
 import { usd, usdFull } from "@/lib/format";
 import type { TornadoRow } from "@/lib/metrics/forecast";
 import { niceTicks } from "@/lib/ticks";
+import { useIsNarrow } from "./hooks";
 
 /**
  * Drivers ranked by the EBITDA swing each produces at plus and minus ten percent
@@ -13,6 +14,8 @@ import { niceTicks } from "@/lib/ticks";
  * and gives exact control over the zero rule and the direct labels.
  */
 export function TornadoChart({ rows }: { rows: TornadoRow[] }) {
+  const narrow = useIsNarrow();
+
   if (rows.length === 0) return null;
 
   const extent = Math.max(
@@ -27,16 +30,40 @@ export function TornadoChart({ rows }: { rows: TornadoRow[] }) {
 
   return (
     <div>
-      <ul className="list-none space-y-2 p-0">
+      {/*
+        At 390px the desktop layout leaves about 186px of plot after the 128px
+        label gutter, and the value labels — "($17,473) at +10%" — are wider than
+        that on their own, so they ran off the card and over each other.
+
+        The phone stacks instead: the driver name gets its own line, the bar gets
+        the full width, and the two figures sit beneath it at the ends they
+        belong to. Same information, three rows instead of one.
+      */}
+      <ul className={`list-none p-0 ${narrow ? "space-y-3" : "space-y-2"}`}>
         {rows.map((row) => {
           const lowPos = position(row.low);
           const highPos = position(row.high);
           return (
-            <li key={row.key} className="grid grid-cols-[128px_1fr] items-center gap-3">
-              <span className="truncate text-[11.5px] text-ink" title={row.label}>
+            <li
+              key={row.key}
+              className={
+                narrow
+                  ? "space-y-1"
+                  : "grid grid-cols-[128px_1fr] items-center gap-3"
+              }
+            >
+              <span
+                className={
+                  narrow
+                    ? "block text-[12px] text-ink"
+                    : "truncate text-[11.5px] text-ink"
+                }
+                title={row.label}
+              >
                 {row.label}
               </span>
 
+              <div>
               <div className="relative h-6">
                 {/* The shared centre. */}
                 <span
@@ -50,7 +77,7 @@ export function TornadoChart({ rows }: { rows: TornadoRow[] }) {
                      an invisible bar, which would read as a rendering fault.
                      Stock cover is the case in point: it moves cash, not EBITDA. */
                   <span
-                    className="absolute top-1 text-[10px] leading-4 text-muted"
+                    className="furniture absolute top-1 leading-4 text-muted"
                     style={{ left: `calc(${zero}% + 6px)` }}
                   >
                     no EBITDA effect — moves cash only
@@ -62,28 +89,48 @@ export function TornadoChart({ rows }: { rows: TornadoRow[] }) {
                       to={lowPos}
                       value={row.low}
                       direction="−10%"
+                      showLabel={!narrow}
                     />
                     <Segment
                       from={zero}
                       to={highPos}
                       value={row.high}
                       direction="+10%"
+                      showLabel={!narrow}
                     />
                   </>
                 )}
+              </div>
+
+              {narrow && row.magnitude >= 1 && (
+                <div className="mt-1 flex justify-between gap-3">
+                  <span className="fig furniture text-muted">
+                    {usdFull(row.low)}{" "}
+                    <span style={{ fontVariantNumeric: "normal" }}>at −10%</span>
+                  </span>
+                  <span className="fig furniture text-muted">
+                    {usdFull(row.high)}{" "}
+                    <span style={{ fontVariantNumeric: "normal" }}>at +10%</span>
+                  </span>
+                </div>
+              )}
               </div>
             </li>
           );
         })}
       </ul>
 
-      <div className="mt-2 grid grid-cols-[128px_1fr] gap-3">
-        <span />
+      <div
+        className={
+          narrow ? "mt-2" : "mt-2 grid grid-cols-[128px_1fr] gap-3"
+        }
+      >
+        {!narrow && <span />}
         <div className="relative h-4">
           {scale.ticks.map((tick) => (
             <span
               key={tick}
-              className="fig absolute top-0 -translate-x-1/2 text-[10px] text-muted"
+              className="fig furniture absolute top-0 -translate-x-1/2 text-muted"
               style={{ left: `${position(tick)}%` }}
             >
               {usd(tick)}
@@ -108,12 +155,15 @@ function Segment({
   to,
   value,
   direction,
+  showLabel,
 }: {
   from: number;
   to: number;
   value: number;
   /** Which way the driver was moved to produce this bar. */
   direction: string;
+  /** False on a phone, where the figures are listed beneath the bar instead. */
+  showLabel: boolean;
 }) {
   if (Math.abs(to - from) < 0.01) return null;
 
@@ -140,17 +190,19 @@ function Segment({
           direction is stated because favourability is not the same as sign: a
           lower CAC helps EBITDA while a lower AOV hurts it, so a green bar alone
           does not tell the reader which way the driver moved. */}
-      <span
-        className="fig absolute top-1 whitespace-nowrap text-[10px] leading-4 text-muted"
-        style={
-          to >= from
-            ? { left: `calc(${left + width}% + 4px)` }
-            : { right: `calc(${100 - left}% + 4px)` }
-        }
-      >
-        {usdFull(value)}{" "}
-        <span style={{ fontVariantNumeric: "normal" }}>at {direction}</span>
-      </span>
+      {showLabel && (
+        <span
+          className="fig furniture absolute top-1 whitespace-nowrap leading-4 text-muted"
+          style={
+            to >= from
+              ? { left: `calc(${left + width}% + 4px)` }
+              : { right: `calc(${100 - left}% + 4px)` }
+          }
+        >
+          {usdFull(value)}{" "}
+          <span style={{ fontVariantNumeric: "normal" }}>at {direction}</span>
+        </span>
+      )}
     </>
   );
 }

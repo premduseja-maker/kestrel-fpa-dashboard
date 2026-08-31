@@ -19,7 +19,7 @@ export function MonthSelector() {
         onChange={(event) => setSelectedMonth(event.target.value)}
         disabled={status !== "ready"}
         aria-label="Reporting month"
-        className="fig cursor-pointer border border-rule bg-surface px-2 py-1 text-[12px] text-ink disabled:cursor-not-allowed disabled:text-muted"
+        className="fig min-h-[44px] cursor-pointer border border-rule bg-surface px-2 py-1 text-[12px] text-ink disabled:cursor-not-allowed disabled:text-muted sm:min-h-0"
         style={{ borderRadius: 5 }}
       >
         {months.length === 0 && <option value="">—</option>}

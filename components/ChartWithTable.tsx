@@ -40,7 +40,7 @@ export function ChartWithTable({
               onClick={() => setView(mode)}
               aria-pressed={view === mode}
               aria-controls={panelId}
-              className={`px-2.5 py-1 text-[11px] capitalize transition-colors ${
+              className={`min-h-[44px] px-3.5 text-[11px] capitalize transition-colors sm:min-h-0 sm:px-2.5 sm:py-1 ${
                 view === mode
                   ? "bg-ink-wash font-semibold text-ink"
                   : "text-muted hover:text-ink"
