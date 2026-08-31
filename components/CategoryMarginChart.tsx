@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   CartesianGrid,
   Label,
@@ -54,32 +54,73 @@ export function CategoryMarginChart({
 }) {
   const reducedMotion = usePrefersReducedMotion();
   const narrow = useIsNarrow();
+  const [monthWindow, setMonthWindow] = useState<12 | 24>(12);
+
+  /**
+   * Twenty-four monthly points across 390px is roughly 13px per month, which
+   * turns four lines into a single textured band. The last twelve months is the
+   * readable default on a phone — and it is also the comparison the narrative
+   * rests on — with the full history one tap away for anyone who wants it.
+   */
+  const shown = narrow && monthWindow === 12 ? series.slice(-12) : series;
 
   const model = useMemo(() => {
-    if (series.length === 0) return null;
+    if (shown.length === 0) return null;
 
-    const values = series.flatMap((point) => [
+    const values = shown.flatMap((point) => [
       point.group,
       ...CATEGORIES.map((category) => point[category]),
     ]);
 
     return {
       scale: niceTicks(Math.min(...values), Math.max(...values), 6),
-      spread: widestSpread(series),
-      last: series[series.length - 1],
+      spread: widestSpread(shown),
+      last: shown[shown.length - 1],
     };
-  }, [series]);
+  }, [shown]);
 
   if (!model) return <div style={{ height: CATEGORY_MARGIN_HEIGHT }} />;
 
   const { scale, spread, last } = model;
 
   return (
-    <div style={{ height: CATEGORY_MARGIN_HEIGHT }}>
+    <>
+      {narrow && (
+        <div className="flex justify-end pb-2">
+          <div
+            className="flex overflow-hidden border border-rule"
+            role="group"
+            aria-label="Months shown"
+            style={{ borderRadius: 5 }}
+          >
+            {([12, 24] as const).map((option) => (
+              <button
+                key={option}
+                type="button"
+                onClick={() => setMonthWindow(option)}
+                aria-pressed={monthWindow === option}
+                className={`min-h-[44px] px-3 text-[11px] transition-colors ${
+                  monthWindow === option
+                    ? "bg-ink-wash font-semibold text-ink"
+                    : "text-muted hover:text-ink"
+                }`}
+              >
+                {option} months
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div style={{ height: CATEGORY_MARGIN_HEIGHT }}>
       <ResponsiveContainer width="100%" height="100%">
         <LineChart
-          data={series}
-          margin={{ top: 30, right: 96, bottom: 8, left: 4 }}
+          data={shown}
+          margin={
+            narrow
+              ? { top: 12, right: 10, bottom: 8, left: 0 }
+              : { top: 30, right: 96, bottom: 8, left: 4 }
+          }
         >
           <CartesianGrid stroke="var(--rule)" vertical={false} />
 
@@ -99,7 +140,7 @@ export function CategoryMarginChart({
               right edge, where the text ran off the plot. */}
           {spread && !narrow && (
             <ReferenceArea
-              x1={series[0].month}
+              x1={shown[0].month}
               x2={last.month}
               fill="none"
               stroke="none"
@@ -123,7 +164,8 @@ export function CategoryMarginChart({
           <XAxis
             dataKey="month"
             tickFormatter={monthShort}
-            interval={narrow ? 5 : 2}
+            // Twelve points fit a label every third month; twenty-four do not.
+            interval={narrow ? (shown.length <= 12 ? 2 : 5) : 2}
             axisLine={{ stroke: "var(--rule)" }}
             tickLine={false}
             tick={{ fill: "var(--muted)", fontSize: 10 }}
@@ -174,7 +216,12 @@ export function CategoryMarginChart({
             />
           ))}
 
-          {/* Direct end labels instead of a legend. */}
+          {/* Direct end labels instead of a legend — but only where there is
+              room for them. At 390px "Accessories" needs 70px of gutter, which
+              is a third of the plot, and Hardgoods and Accessories end close
+              enough together that the two labels overlap anyway. The phone gets
+              its identities from the legend below the chart instead, which also
+              carries each line's closing value. */}
           {SERIES.map((entry) => (
             <ReferenceDot
               key={`label-${entry.key}`}
@@ -185,14 +232,16 @@ export function CategoryMarginChart({
               stroke="var(--surface)"
               strokeWidth={2}
             >
-              <Label
-                value={entry.key}
-                position="right"
-                offset={8}
-                fill={entry.color === "var(--muted)" ? "var(--muted)" : "var(--ink)"}
-                fontSize={11}
-                fontWeight={600}
-              />
+              {narrow ? null : (
+                <Label
+                  value={entry.key}
+                  position="right"
+                  offset={8}
+                  fill={entry.color === "var(--muted)" ? "var(--muted)" : "var(--ink)"}
+                  fontSize={11}
+                  fontWeight={600}
+                />
+              )}
             </ReferenceDot>
           ))}
           <ReferenceDot
@@ -203,18 +252,63 @@ export function CategoryMarginChart({
             stroke="var(--surface)"
             strokeWidth={2}
           >
-            <Label
-              value="Group"
-              position="right"
-              offset={8}
-              fill="var(--ink)"
-              fontSize={11}
-              fontWeight={600}
-            />
+            {narrow ? null : (
+              <Label
+                value="Group"
+                position="right"
+                offset={8}
+                fill="var(--ink)"
+                fontSize={11}
+                fontWeight={600}
+              />
+            )}
           </ReferenceDot>
         </LineChart>
       </ResponsiveContainer>
-    </div>
+      </div>
+
+      {narrow && (
+        <ul className="mt-2 grid list-none grid-cols-2 gap-x-4 gap-y-1 p-0">
+          {[
+            ...SERIES.map((entry) => ({
+              key: entry.key as string,
+              color: entry.color,
+              value: last[entry.key],
+              dashed: false,
+            })),
+            {
+              key: "Group",
+              color: "var(--ink)",
+              value: last.group,
+              dashed: true,
+            },
+          ].map((entry) => (
+            <li
+              key={entry.key}
+              className="flex items-baseline gap-2 text-[11px]"
+            >
+              <span
+                aria-hidden="true"
+                className="h-0.5 w-3.5 shrink-0 self-center"
+                style={
+                  entry.dashed
+                    ? {
+                        // Matches the dashed group line in the plot. A dashed
+                        // border rather than a repeating gradient, because the
+                        // brief rules gradients out.
+                        borderTop: `2px dashed ${entry.color}`,
+                        height: 0,
+                      }
+                    : { background: entry.color }
+                }
+              />
+              <span className="text-muted">{entry.key}</span>
+              <span className="fig ml-auto text-ink">{pct(entry.value)}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </>
   );
 }
 

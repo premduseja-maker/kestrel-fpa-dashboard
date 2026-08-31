@@ -16,7 +16,7 @@ export function KpiStrip({
   markerIndex: number;
 }) {
   return (
-    <ul className="grid list-none grid-cols-1 gap-4 p-0 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+    <ul className="grid list-none grid-cols-2 gap-3 p-0 sm:gap-4 lg:grid-cols-3 xl:grid-cols-5">
       {kpis.map((kpi) => (
         <li key={kpi.id}>
           <KpiCard kpi={kpi} markerIndex={markerIndex} />
@@ -26,17 +26,21 @@ export function KpiStrip({
   );
 }
 
+/**
+ * Two cards to a phone row, so the padding and the gutter between the change
+ * columns tighten to keep a value like "-254.3%" on one line at 171px wide.
+ */
 function KpiCard({ kpi, markerIndex }: { kpi: Kpi; markerIndex: number }) {
   return (
-    <Card className="flex flex-col justify-between p-4">
+    <Card className="flex flex-col justify-between p-3 sm:p-4">
       <div style={{ minHeight: 64 }}>
         <p className="text-[11px] leading-tight text-muted">{kpi.label}</p>
-        <p className="fig heading mt-1.5 text-[22px] leading-none text-ink">
+        <p className="fig heading mt-1.5 text-[19px] leading-none text-ink sm:text-[22px]">
           {formatValue(kpi.value, kpi.unit)}
         </p>
       </div>
 
-      <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1 text-[11px]">
+      <dl className="mt-3 grid grid-cols-2 gap-x-1.5 gap-y-1 text-[11px] sm:gap-x-3">
         <ChangeRow
           period="MoM"
           change={kpi.mom}
@@ -122,11 +126,11 @@ function formatChange(change: KpiChange, unit: KpiUnit): string {
 
 export function KpiStripSkeleton() {
   return (
-    <ul className="grid list-none grid-cols-1 gap-4 p-0 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+    <ul className="grid list-none grid-cols-2 gap-3 p-0 sm:gap-4 lg:grid-cols-3 xl:grid-cols-5">
       {Array.from({ length: 5 }, (_, index) => (
         <li key={index}>
           <Card
-            className="animate-pulse p-4"
+            className="animate-pulse p-3 sm:p-4"
             // Matches the real card so nothing shifts when data lands.
           >
             <div style={{ minHeight: 64 }}>

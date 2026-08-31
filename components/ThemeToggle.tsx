@@ -44,7 +44,7 @@ export function ThemeToggle() {
             type="button"
             onClick={() => setTheme(option.value)}
             aria-pressed={active}
-            className={`px-2 py-1.5 text-[11px] transition-colors ${
+            className={`min-h-[44px] px-2.5 text-[11px] transition-colors sm:min-h-0 sm:px-2 sm:py-1.5 ${
               active
                 ? "bg-ink-wash font-semibold text-ink"
                 : "text-muted hover:text-ink"

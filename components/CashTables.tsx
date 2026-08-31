@@ -1,9 +1,13 @@
+"use client";
+
 import { coverMonths, pct, ptsMagnitude, usdFull } from "@/lib/format";
 import {
   AGEING_BUCKETS,
   type CustomerAgeingRow,
   type ExcessStockRow,
 } from "@/lib/metrics/cash";
+import { useIsNarrow } from "./hooks";
+import { HScroll } from "./HScroll";
 
 /**
  * The ten SKUs holding the most cash above target cover, and what returning them
@@ -20,8 +24,8 @@ export function ExcessStockTable({
   total: number;
 }) {
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full border-collapse text-[12px]">
+    <HScroll hint="Scroll for stock value and cash released">
+      <table className="w-full min-w-[520px] border-collapse text-[12px]">
         <caption className="sr-only">
           SKUs with the most cash tied up above target inventory cover
         </caption>
@@ -83,7 +87,7 @@ export function ExcessStockTable({
           </tr>
         </tfoot>
       </table>
-    </div>
+    </HScroll>
   );
 }
 
@@ -115,8 +119,10 @@ export function CustomerAgeingTable({
           .map((row) => row.customer),
   );
 
-  return (
-    <div className="overflow-x-auto">
+  const narrow = useIsNarrow();
+
+  const note = (
+    <>
       {uniformProfile && (
         <p className="mb-3 border-l-2 border-signal bg-signal-wash px-3 py-2 text-[11px] leading-relaxed text-muted">
           <span className="font-semibold text-ink">
@@ -129,6 +135,35 @@ export function CustomerAgeingTable({
           simply the size of each balance, and the table is ordered that way.
         </p>
       )}
+    </>
+  );
+
+  if (narrow) {
+    return (
+      <div>
+        {note}
+        {/* Nine columns — customer, five ageing buckets, total, past-due share
+            and the shift — is roughly 900px of table. Scrolling it sideways
+            would hide the two figures that matter most, so each account becomes
+            a card: balance and past-due share on the face, the bucket split
+            behind a tap. */}
+        <ul className="list-none space-y-2 p-0">
+          {rows.map((row) => (
+            <AgeingCard
+              key={row.customer}
+              row={row}
+              flagged={flagged.has(row.customer)}
+              comparisonLabel={comparisonLabel}
+            />
+          ))}
+        </ul>
+      </div>
+    );
+  }
+
+  return (
+    <div className="overflow-x-auto">
+      {note}
       <table className="w-full border-collapse text-[12px]">
         <caption className="sr-only">
           Receivables ageing by customer for the reporting month
@@ -212,5 +247,87 @@ export function CustomerAgeingTable({
         </tbody>
       </table>
     </div>
+  );
+}
+
+/**
+ * One customer's ageing as a card.
+ *
+ * The face carries the balance and the past-due share, which is what decides
+ * whether the account needs a call. The five buckets sit behind a tap because
+ * they explain the share rather than compete with it.
+ */
+function AgeingCard({
+  row,
+  flagged,
+  comparisonLabel,
+}: {
+  row: CustomerAgeingRow;
+  flagged: boolean;
+  comparisonLabel: string | null;
+}) {
+  const worsening = (row.pastDueShift ?? 0) > 0;
+
+  return (
+    <li>
+      <details className="border border-rule bg-surface" style={{ borderRadius: 5 }}>
+        <summary className="flex min-h-[44px] cursor-pointer list-none items-center justify-between gap-3 px-3 py-2">
+          <span className="min-w-0">
+            <span className="block truncate text-[12px] text-ink">
+              {row.customer}
+              {flagged && (
+                // Flag carries a word, never colour alone.
+                <span className="ml-1.5 text-[10px] font-semibold text-unfavourable">
+                  worsening
+                </span>
+              )}
+            </span>
+            <span className="fig block text-[11px] text-muted">
+              {usdFull(row.total)} outstanding
+            </span>
+          </span>
+
+          <span className="flex shrink-0 items-baseline gap-2.5 text-right">
+            <span className="fig text-[13px] text-ink">{pct(row.pastDueShare)}</span>
+            <span
+              className={`fig text-[12px] ${
+                worsening ? "text-unfavourable" : "text-favourable"
+              }`}
+            >
+              {row.pastDueShift === null
+                ? "—"
+                : `${row.pastDueShift > 0 ? "+" : "-"}${ptsMagnitude(row.pastDueShift)}`}
+            </span>
+            <span aria-hidden="true" className="text-[10px] text-muted">
+              ▾
+            </span>
+          </span>
+        </summary>
+
+        <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5 border-t border-rule px-3 py-2.5 text-[12px]">
+          {AGEING_BUCKETS.map((bucket) => (
+            <div key={bucket.key}>
+              <dt className="text-[11px] text-muted">{bucket.label}</dt>
+              <dd className="fig m-0 text-ink">{usdFull(row[bucket.key])}</dd>
+            </div>
+          ))}
+          <div className="col-span-2">
+            <dt className="text-[11px] text-muted">
+              Past due{comparisonLabel ? ` vs ${comparisonLabel}` : ""}
+            </dt>
+            <dd className="fig m-0 text-ink">
+              {pct(row.pastDueShare)}
+              {row.pastDueShift !== null && (
+                <span className={worsening ? "text-unfavourable" : "text-favourable"}>
+                  {" "}
+                  {row.pastDueShift > 0 ? "+" : "-"}
+                  {ptsMagnitude(row.pastDueShift)}
+                </span>
+              )}
+            </dd>
+          </div>
+        </dl>
+      </details>
+    </li>
   );
 }

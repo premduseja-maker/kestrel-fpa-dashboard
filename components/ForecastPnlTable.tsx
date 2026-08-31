@@ -1,5 +1,6 @@
 import { monthShort, pct, usdFull } from "@/lib/format";
 import type { ForecastMonth, ForecastResult } from "@/lib/metrics/forecast";
+import { HScroll } from "./HScroll";
 
 interface Line {
   label: string;
@@ -43,8 +44,12 @@ export function ForecastPnlTable({ result }: { result: ForecastResult }) {
   };
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full border-collapse text-[11.5px]">
+    /* Fourteen columns will not compress into 390px — at that width every figure
+       wraps or truncates. The table keeps its natural size and scrolls, with the
+       line column pinned so a reader who has scrolled out to December can still
+       see which row they are reading. */
+    <HScroll hint="Scroll sideways for later months and the FY total">
+      <table className="w-full min-w-[880px] border-collapse text-[11.5px]">
         <caption className="sr-only">
           Twelve-month forward profit and loss on the current driver settings
         </caption>
@@ -52,7 +57,7 @@ export function ForecastPnlTable({ result }: { result: ForecastResult }) {
           <tr className="border-b border-rule">
             <th
               scope="col"
-              className="sticky left-0 z-10 bg-surface px-2 py-2 text-left font-medium text-muted"
+              className="sticky left-0 z-10 border-r border-rule bg-surface px-2 py-2 text-left font-medium text-muted"
             >
               Line
             </th>
@@ -90,7 +95,7 @@ export function ForecastPnlTable({ result }: { result: ForecastResult }) {
               <tr key={line.label} className={border}>
                 <th
                   scope="row"
-                  className={`sticky left-0 z-10 whitespace-nowrap bg-surface px-2 py-1.5 text-left ${emphasis} ${
+                  className={`sticky left-0 z-10 whitespace-nowrap border-r border-rule bg-surface px-2 py-1.5 text-left ${emphasis} ${
                     line.indent ? "pl-5" : ""
                   }`}
                   style={{ fontVariantNumeric: "normal", fontWeight: line.kind ? undefined : 400 }}
@@ -124,6 +129,6 @@ export function ForecastPnlTable({ result }: { result: ForecastResult }) {
           })}
         </tbody>
       </table>
-    </div>
+    </HScroll>
   );
 }

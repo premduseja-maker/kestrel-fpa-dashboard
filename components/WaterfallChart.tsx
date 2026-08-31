@@ -75,33 +75,88 @@ export function WaterfallChart({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bars, floor, ceiling, totalMeaning]);
 
-  return (
-    <div style={{ height }}>
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={rows} margin={{ top: 26, right: 12, bottom: 8, left: 4 }}>
-          <CartesianGrid stroke="var(--rule)" vertical={false} />
+  /**
+   * On a phone the waterfall turns on its side.
+   *
+   * Vertical bars put seven category names on the x-axis, which at 390px is
+   * about 45px per label — "Unit cost" and "Discount" either truncate or stack
+   * on top of each other, and the value labels above the bars collide outright.
+   * Rotated, each bar gets a full-width row: the name reads horizontally in the
+   * gutter and the figure sits at the bar's end with room to spare, so the
+   * mobile chart carries *more* information than the desktop one rather than
+   * less.
+   */
+  const barHeight = 42;
+  const chartHeight = narrow ? rows.length * barHeight + 46 : height;
 
-          <XAxis
-            dataKey="short"
-            axisLine={{ stroke: "var(--rule)" }}
-            tickLine={false}
-            tick={{ fill: "var(--muted)", fontSize: 10 }}
-            interval={0}
+  return (
+    <div style={{ height: chartHeight }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart
+          data={rows}
+          layout={narrow ? "vertical" : "horizontal"}
+          margin={
+            narrow
+              ? { top: 4, right: 62, bottom: 4, left: 0 }
+              : { top: 26, right: 12, bottom: 8, left: 4 }
+          }
+        >
+          <CartesianGrid
+            stroke="var(--rule)"
+            vertical={narrow}
+            horizontal={!narrow}
           />
-          <YAxis
-            domain={[scale.lo, scale.hi]}
-            ticks={scale.ticks}
-            tickFormatter={(value: number) => usd(value + floor)}
-            axisLine={false}
-            tickLine={false}
-            tick={{ fill: "var(--muted)", fontSize: 10 }}
-            width={58}
-          />
+
+          {narrow ? (
+            <>
+              <XAxis
+                type="number"
+                domain={[scale.lo, scale.hi]}
+                ticks={scale.ticks}
+                tickFormatter={(value: number) => usd(value + floor)}
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: "var(--muted)", fontSize: 10 }}
+                height={22}
+              />
+              <YAxis
+                type="category"
+                dataKey="short"
+                axisLine={{ stroke: "var(--rule)" }}
+                tickLine={false}
+                tick={{ fill: "var(--muted)", fontSize: 11 }}
+                interval={0}
+                width={74}
+              />
+            </>
+          ) : (
+            <>
+              <XAxis
+                dataKey="short"
+                axisLine={{ stroke: "var(--rule)" }}
+                tickLine={false}
+                tick={{ fill: "var(--muted)", fontSize: 10 }}
+                interval={0}
+              />
+              <YAxis
+                domain={[scale.lo, scale.hi]}
+                ticks={scale.ticks}
+                tickFormatter={(value: number) => usd(value + floor)}
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: "var(--muted)", fontSize: 10 }}
+                width={58}
+              />
+            </>
+          )}
 
           {/* True zero, once the frame shift is accounted for. */}
-          {floor < 0 && (
-            <ReferenceLine y={-floor} stroke="var(--muted)" strokeWidth={1} />
-          )}
+          {floor < 0 &&
+            (narrow ? (
+              <ReferenceLine x={-floor} stroke="var(--muted)" strokeWidth={1} />
+            ) : (
+              <ReferenceLine y={-floor} stroke="var(--muted)" strokeWidth={1} />
+            ))}
 
           <Tooltip
             content={<WaterfallTooltip />}
@@ -120,8 +175,8 @@ export function WaterfallChart({
             stackId="waterfall"
             isAnimationActive={!reducedMotion}
             animationDuration={400}
-            maxBarSize={54}
-            radius={[3, 3, 0, 0]}
+            maxBarSize={narrow ? 26 : 54}
+            radius={narrow ? [0, 3, 3, 0] : [3, 3, 0, 0]}
           >
             {rows.map((row) => (
               <Cell
@@ -135,17 +190,19 @@ export function WaterfallChart({
                 }
               />
             ))}
-            {/* At phone width seven value labels collide into each other, so the
-                figures are dropped and the detail table beside the chart carries
-                them instead. Fewer marks, not smaller ones. */}
-            {!narrow && (
-              <LabelList
-                dataKey="span"
-                content={(props: unknown) => (
-                  <BarValueLabel {...(props as BarLabelProps)} rows={rows} />
-                )}
-              />
-            )}
+            {/* Rotating the chart is what buys the labels back: laid out in rows
+                there is room at each bar's end for its figure, where stacked
+                vertically at 390px seven of them collided. */}
+            <LabelList
+              dataKey="span"
+              content={(props: unknown) => (
+                <BarValueLabel
+                  {...(props as BarLabelProps)}
+                  rows={rows}
+                  narrow={narrow}
+                />
+              )}
+            />
           </Bar>
         </BarChart>
       </ResponsiveContainer>
@@ -157,21 +214,25 @@ interface BarLabelProps {
   x?: number;
   y?: number;
   width?: number;
+  height?: number;
   index?: number;
 }
 
 /**
- * Value above each bar. Written by hand rather than through LabelList's
- * formatter because the label must show the bar's *signed* contribution, not the
- * span that was actually plotted.
+ * The bar's figure — above it when the chart runs vertically, past its end when
+ * the chart is rotated for a phone. Written by hand rather than through
+ * LabelList's formatter because the label must show the bar's *signed*
+ * contribution, not the span that was actually plotted.
  */
 function BarValueLabel({
   x,
   y,
   width,
+  height,
   index,
   rows,
-}: BarLabelProps & { rows: { value: number }[] }) {
+  narrow,
+}: BarLabelProps & { rows: { value: number }[]; narrow: boolean }) {
   if (
     x === undefined ||
     y === undefined ||
@@ -182,6 +243,21 @@ function BarValueLabel({
   }
   const row = rows[index];
   if (!row) return null;
+
+  if (narrow) {
+    return (
+      <text
+        x={x + width + 6}
+        y={y + (height ?? 0) / 2}
+        dominantBaseline="central"
+        textAnchor="start"
+        fill="var(--muted)"
+        fontSize={11}
+      >
+        {usd(row.value)}
+      </text>
+    );
+  }
 
   return (
     <text

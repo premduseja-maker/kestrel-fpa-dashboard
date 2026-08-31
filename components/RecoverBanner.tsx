@@ -56,11 +56,13 @@ export function RecoverBanner({
           </p>
         </div>
 
+        {/* Full width on a phone: this is the screen's one action, and a small
+            button floated beside a $170k figure reads as a caption to it. */}
         <button
           type="button"
           onClick={onApply}
           disabled={applied}
-          className="shrink-0 border border-signal bg-signal px-3.5 py-2 text-[12.5px] font-semibold text-on-signal transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+          className="min-h-[44px] w-full shrink-0 border border-signal bg-signal px-3.5 py-2 text-[13px] font-semibold text-on-signal transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:text-[12.5px]"
           style={{ borderRadius: 5 }}
         >
           {applied ? "Recover applied" : "Apply Recover"}

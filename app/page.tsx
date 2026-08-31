@@ -9,6 +9,7 @@ import {
 } from "@/components/chart-heights";
 import { KpiStrip, KpiStripSkeleton } from "@/components/KpiStrip";
 import { useDashboard } from "@/components/DashboardProvider";
+import { useIsNarrow } from "@/components/hooks";
 
 /* Charts are loaded on demand. Nothing above the fold needs Recharts, and the
    charts only render once the data has arrived anyway, so keeping the charting
@@ -32,6 +33,7 @@ import { executiveKpis } from "@/lib/metrics/executive";
 
 export default function ExecutiveSummary() {
   const { status, error, pl, cashflow, budget, selectedMonth } = useDashboard();
+  const narrow = useIsNarrow();
 
   const model = useMemo(() => {
     if (status !== "ready" || !selectedMonth) return null;
@@ -85,9 +87,16 @@ export default function ExecutiveSummary() {
 
       <section className="col-span-12 min-w-0">
         <Card>
+          {/* The subtitle has to follow the chart. On a phone this is a single
+              indexed scale, and describing a left and a right axis there would
+              be describing a chart that is not on the screen. */}
           <CardHeader
             title="Revenue against EBITDA"
-            subtitle="Monthly, all 24 months. Left axis net revenue, right axis EBITDA — two scales, so read each line against its own axis and take the movements, not the crossing point, as the story."
+            subtitle={
+              narrow
+                ? "Monthly, all 24 months, both rebased to 100 at the first month so a single scale carries them — the gap between the lines is the divergence."
+                : "Monthly, all 24 months. Left axis net revenue, right axis EBITDA — two scales, so read each line against its own axis and take the movements, not the crossing point, as the story."
+            }
           />
           <div className="min-w-0 px-2 pb-4 pt-2 sm:px-3">
             {model ? (

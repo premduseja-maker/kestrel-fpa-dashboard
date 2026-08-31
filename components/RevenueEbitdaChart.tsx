@@ -8,6 +8,7 @@ import {
   LineChart,
   ReferenceArea,
   ReferenceDot,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -77,9 +78,42 @@ export function RevenueEbitdaChart({ pl }: { pl: PLMonth[] }) {
 
     const comparable = revenueMove !== null && ebitdaMove !== null;
 
+    /**
+     * The phone variant. Two y-scales need two axis gutters, and at 390px those
+     * gutters plus the direct labels leave under half the width for the plot —
+     * but the deeper problem is that a dual axis only works when the reader can
+     * see which line belongs to which side, and on a phone they cannot.
+     *
+     * Rebasing both series to 100 at the first month puts them on one scale
+     * honestly: the lines start together and the gap between them *is* the
+     * divergence, with no alignment chosen by the chart. Zero base months are
+     * left null rather than dividing by zero.
+     */
+    const base = rows[0];
+    const indexed = rows.map((row) => ({
+      month: row.month,
+      // The dollars ride along so the tooltip can still answer "how much?"
+      net_revenue: row.net_revenue,
+      ebitda: row.ebitda,
+      revenueIndex:
+        base.net_revenue === 0 ? null : (row.net_revenue / base.net_revenue) * 100,
+      ebitdaIndex:
+        base.ebitda === 0 ? null : (row.ebitda / base.ebitda) * 100,
+    }));
+    const indexValues = indexed
+      .flatMap((row) => [row.revenueIndex, row.ebitdaIndex])
+      .filter((value): value is number => value !== null);
+
     return {
       rows,
       last,
+      indexed,
+      indexScale: niceTicks(
+        Math.min(0, ...indexValues),
+        Math.max(...indexValues),
+        4,
+      ),
+      lastIndexed: indexed[indexed.length - 1],
       regionStart: rows[Math.max(0, rows.length - 12)].month,
       // Revenue is a magnitude, so its axis holds zero; EBITDA goes negative and
       // fits its own range. Both get round ticks rather than Recharts' defaults.
@@ -98,8 +132,126 @@ export function RevenueEbitdaChart({ pl }: { pl: PLMonth[] }) {
 
   if (!model) return <div style={{ height: REVENUE_EBITDA_HEIGHT }} />;
 
-  const { rows, last, regionStart, annotation, revenueScale, ebitdaScale } =
-    model;
+  const {
+    rows,
+    last,
+    regionStart,
+    annotation,
+    revenueScale,
+    ebitdaScale,
+    indexed,
+    indexScale,
+    lastIndexed,
+  } = model;
+
+  if (narrow) {
+    return (
+      <div>
+        <div style={{ height: REVENUE_EBITDA_HEIGHT }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart
+              data={indexed}
+              margin={{ top: 12, right: 54, bottom: 8, left: 0 }}
+            >
+              <CartesianGrid stroke="var(--rule)" vertical={false} />
+
+              <XAxis
+                dataKey="month"
+                tickFormatter={monthShort}
+                interval={5}
+                axisLine={AXIS}
+                tickLine={false}
+                tick={AXIS.tick}
+                minTickGap={4}
+              />
+              <YAxis
+                domain={[indexScale.lo, indexScale.hi]}
+                ticks={indexScale.ticks}
+                axisLine={false}
+                tickLine={false}
+                tick={AXIS.tick}
+                width={34}
+              />
+
+              {/* The common base. Both series start here by construction. */}
+              <ReferenceLine y={100} stroke="var(--muted)" strokeWidth={1} />
+
+              <Tooltip
+                content={<IndexedTooltip />}
+                cursor={{ stroke: "var(--rule)" }}
+              />
+
+              <Line
+                type="monotone"
+                dataKey="revenueIndex"
+                stroke="var(--ink)"
+                strokeWidth={2}
+                dot={false}
+                activeDot={{ r: 3.5, fill: "var(--ink)", stroke: "var(--surface)", strokeWidth: 2 }}
+                isAnimationActive={!reducedMotion}
+                animationDuration={400}
+              />
+              <Line
+                type="monotone"
+                dataKey="ebitdaIndex"
+                stroke="var(--signal)"
+                strokeWidth={2}
+                dot={false}
+                activeDot={{ r: 3.5, fill: "var(--signal)", stroke: "var(--surface)", strokeWidth: 2 }}
+                isAnimationActive={!reducedMotion}
+                animationDuration={400}
+              />
+
+              {/* Direct labels, no legend — as on the desktop variant. */}
+              {lastIndexed.revenueIndex !== null && (
+                <ReferenceDot
+                  x={lastIndexed.month}
+                  y={lastIndexed.revenueIndex}
+                  r={3}
+                  fill="var(--ink)"
+                  stroke="var(--surface)"
+                  strokeWidth={2}
+                >
+                  <Label
+                    value="Revenue"
+                    position="right"
+                    offset={7}
+                    fill="var(--ink)"
+                    fontSize={11}
+                    fontWeight={600}
+                  />
+                </ReferenceDot>
+              )}
+              {lastIndexed.ebitdaIndex !== null && (
+                <ReferenceDot
+                  x={lastIndexed.month}
+                  y={lastIndexed.ebitdaIndex}
+                  r={3}
+                  fill="var(--signal)"
+                  stroke="var(--surface)"
+                  strokeWidth={2}
+                >
+                  <Label
+                    value="EBITDA"
+                    position="right"
+                    offset={7}
+                    fill="var(--signal)"
+                    fontSize={11}
+                    fontWeight={600}
+                  />
+                </ReferenceDot>
+              )}
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+
+        <p className="mt-2 text-[11px] leading-snug text-muted">
+          Both series rebased to 100 at {monthLong(rows[0].month)}, so one scale
+          carries both.{annotation ? ` ${annotation}.` : ""}
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div style={{ height: REVENUE_EBITDA_HEIGHT }}>
@@ -237,6 +389,48 @@ export function RevenueEbitdaChart({ pl }: { pl: PLMonth[] }) {
 interface TooltipPayloadEntry {
   dataKey?: string | number;
   value?: number;
+}
+
+/**
+ * Phone tooltip. Shows the index — which is what the plot is drawn in — and the
+ * dollars behind it, so rebasing never costs the reader the actual number.
+ */
+function IndexedTooltip({
+  active,
+  label,
+  payload,
+}: {
+  active?: boolean;
+  label?: string;
+  payload?: { payload?: Record<string, number | null> }[];
+}) {
+  const row = payload?.[0]?.payload;
+  if (!active || !row) return null;
+
+  return (
+    <div
+      className="border border-rule bg-surface px-2.5 py-2 text-[11px]"
+      style={{ borderRadius: 2 }}
+    >
+      <p className="text-muted">{label ? monthLong(label) : ""}</p>
+      <dl className="mt-1 space-y-0.5">
+        <Row
+          color="var(--ink)"
+          value={`${indexText(row.revenueIndex)} · ${usdFull(row.net_revenue ?? 0)}`}
+          name="Revenue"
+        />
+        <Row
+          color="var(--signal)"
+          value={`${indexText(row.ebitdaIndex)} · ${usdFull(row.ebitda ?? 0)}`}
+          name="EBITDA"
+        />
+      </dl>
+    </div>
+  );
+}
+
+function indexText(value: number | null | undefined): string {
+  return value === null || value === undefined ? "—" : value.toFixed(0);
 }
 
 function RevenueEbitdaTooltip({

@@ -14,6 +14,7 @@ import { usd, usdFull } from "@/lib/format";
 import type { CashAssumptions, ForecastWeek } from "@/lib/metrics/cash";
 import { niceTicks } from "@/lib/ticks";
 import { useIsNarrow, usePrefersReducedMotion } from "./hooks";
+import { HScroll } from "./HScroll";
 
 import { FORECAST_HEIGHT } from "./chart-heights";
 
@@ -53,8 +54,17 @@ export function CashForecastChart({
     ...weeks,
   ];
 
-  return (
-    <div style={{ height: FORECAST_HEIGHT }}>
+  /**
+   * Fourteen points across 390px is 25px per week, which forces the axis to
+   * label every third one — and on a cash runway the week a line crosses zero is
+   * the entire question, so a reader who has to count unlabelled ticks to find
+   * it is being failed by the chart.
+   *
+   * The phone keeps every label and scrolls instead. 600px is the width at which
+   * "W10" stops colliding with "W11".
+   */
+  const chart = (
+    <div style={{ height: FORECAST_HEIGHT, minWidth: narrow ? 600 : undefined }}>
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={rows} margin={{ top: 16, right: 20, bottom: 8, left: 4 }}>
           <CartesianGrid stroke="var(--rule)" vertical={false} />
@@ -64,7 +74,7 @@ export function CashForecastChart({
             axisLine={{ stroke: "var(--rule)" }}
             tickLine={false}
             tick={{ fill: "var(--muted)", fontSize: 10 }}
-            interval={narrow ? 2 : 0}
+            interval={0}
           />
           <YAxis
             domain={[scale.lo, scale.hi]}
@@ -101,6 +111,12 @@ export function CashForecastChart({
         </AreaChart>
       </ResponsiveContainer>
     </div>
+  );
+
+  if (!narrow) return chart;
+
+  return (
+    <HScroll hint={`Scroll for all ${weeks.length} weeks`}>{chart}</HScroll>
   );
 }
 

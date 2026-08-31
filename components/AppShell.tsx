@@ -27,10 +27,22 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-full flex-col">
-      <header className="border-b border-rule bg-surface">
-        <div className="mx-auto flex w-full max-w-[1400px] flex-wrap items-center gap-x-8 gap-y-3 px-4 py-3 sm:px-6">
-          <div className="flex items-baseline gap-2.5">
-            <span className="heading text-[15px] text-ink">
+      {/*
+        Phone layout, top to bottom: brand and month on one row, then the screen
+        tabs on their own row.
+
+        The month selector is deliberately on the first row and right-aligned —
+        it is the control the owner changes most often, and at the top-right it
+        sits under the thumb rather than behind a menu. The tabs scroll
+        horizontally instead of collapsing into a hamburger: four screens is few
+        enough that hiding them behind a tap costs more than it saves, and a
+        visible tab bar also shows which screen you are on without opening
+        anything.
+      */}
+      <header className="sticky top-0 z-30 border-b border-rule bg-surface">
+        <div className="mx-auto flex w-full max-w-[1400px] flex-wrap items-center gap-x-8 gap-y-2 px-4 py-2.5 sm:px-6 sm:py-3">
+          <div className="flex min-w-0 items-baseline gap-2.5">
+            <span className="heading truncate text-[15px] text-ink">
               Kestrel Outdoor Co.
             </span>
             <span className="hidden text-[11px] text-muted sm:inline">
@@ -38,16 +50,19 @@ export function AppShell({ children }: { children: ReactNode }) {
             </span>
           </div>
 
-          <nav aria-label="Screens" className="order-3 w-full sm:order-none sm:w-auto">
-            <ul className="flex items-center gap-1">
+          <nav
+            aria-label="Screens"
+            className="order-3 -mx-4 w-[calc(100%+2rem)] sm:order-none sm:mx-0 sm:w-auto"
+          >
+            <ul className="hscroll flex items-center gap-1 px-4 sm:px-0">
               {SCREENS.map((screen) => {
                 const active = pathname === screen.href;
                 return (
-                  <li key={screen.href}>
+                  <li key={screen.href} className="shrink-0">
                     <Link
                       href={screen.href}
                       aria-current={active ? "page" : undefined}
-                      className={`block px-2.5 py-1.5 text-[12.5px] transition-colors ${
+                      className={`flex min-h-[44px] items-center px-3 text-[12.5px] transition-colors sm:min-h-0 sm:px-2.5 sm:py-1.5 ${
                         active
                           ? "bg-ink-wash font-semibold text-ink"
                           : "text-muted hover:text-ink"
@@ -62,7 +77,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </ul>
           </nav>
 
-          <div className="ml-auto flex items-center gap-3">
+          <div className="ml-auto flex items-center gap-2 sm:gap-3">
             <ThemeToggle />
             <MonthSelector />
           </div>

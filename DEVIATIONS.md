@@ -66,9 +66,13 @@ than reconciled away.
 - **Every chart has a table twin.** Not in the brief. A Recharts SVG is not
   keyboard-reachable and its values live in a pointer tooltip, so without one
   the numbers were gated behind a mouse.
-- **Small text is floored at 12px below 640px.** This is in tension with
+- **Small text is floored at 14px below 640px.** This is in tension with
   "Layout: dense" — density is a desktop affordance, legibility is not
-  negotiable.
+  negotiable. (Was 12px; raised to 14px when the phone layouts were built.)
+  Chart furniture is exempt and carries a `.furniture` class at 10–11px: axis
+  ticks and in-plot value labels are not prose, and at body size they collide
+  with each other, which is the problem the mobile chart variants exist to
+  solve.
 - **Charts are lazy-loaded.** Not specified; keeps Recharts out of the
   hydration path.
 - **The tornado swings ±10% of each driver's absolute value.** Multiplying by
@@ -89,7 +93,37 @@ than reconciled away.
   gross-profit basis; freight, processing and acquisition spend would fall with
   the lost units too, which pushes the true threshold past 45.5%.
 
-## 5. Lighthouse
+## 5. Phone layouts
+
+CLAUDE.md's quality floor says "Works at 390px width. Owners open these on
+phones." The screens now do. The rule followed throughout was **build a
+simplified variant, never shrink the desktop one** — a chart with half its
+labels removed is a different chart, not a smaller one.
+
+| Screen | What changes below 640px |
+|---|---|
+| Shell | Tabs scroll horizontally rather than collapsing into a hamburger — four screens is few enough that hiding them costs more than it saves, and a visible bar also shows which screen you are on. Header is sticky and the month selector sits top-right, under the thumb. |
+| Summary | KPI cards two across. **The dual-axis revenue/EBITDA chart becomes a single axis with both series rebased to 100** at the first month. |
+| Summary, Margin | Both waterfalls rotate to horizontal bars. This *adds* information: laid out in rows there is room for each bar's figure, where stacked vertically at 390px seven value labels collided and were dropped. |
+| Margin | Category margins default to 12 months with a 24-month toggle. The SKU table becomes a card list — SKU, category, GM% and the points movement on the face, the rest behind a tap — with sorting re-exposed as a select, since the header row that carried it no longer exists. |
+| Cash | Inventory cover keeps all 24 months but opens scrolled to the right, so the last six are what you see. The 13-week forecast scrolls rather than dropping to every third week label — on a cash runway the week the line crosses zero is the whole question. Customer ageing becomes a card list. |
+| Forecast | Outputs collapse into an accordion so the sliders stay in reach while adjusting. The tornado stacks: driver name, full-width bar, then the two figures at their ends. The forward P&L scrolls with the line column frozen. |
+
+Three things are worth calling out as judgement calls rather than requirements:
+
+- **The category margin chart drops its direct end labels on a phone** and gains
+  a legend beneath instead. Direct labels are the house style, but "Accessories"
+  needs 70px of right gutter — a third of the plot at 390px — and Hardgoods and
+  Accessories finish close enough together that the two labels overlapped. The
+  legend carries each line's closing value, so it is not a pure loss.
+- **Scroll affordances are stated in words, not drawn as a fade.** The brief
+  prohibits gradients, and a fade is invisible to a screen reader regardless.
+- **Touch targets are enforced below 640px, by width.** `pointer: coarse` is the
+  more correct signal — it would also cover a 768px tablet, which currently gets
+  the desktop layout and its smaller controls — but it cannot be verified in a
+  headless harness, so the tested rule was kept over the untested one.
+
+## 6. Lighthouse
 
 **Desktop: performance 86–97, accessibility 100, best practices 100, SEO 100.**
 The 90+ target is met on a machine that is not otherwise busy — three
@@ -117,7 +151,7 @@ rather than the home page, and both are fixed: the Apply Recover button was
 white on amber at 3.46:1, and the nav and theme controls were a pixel under the
 24px touch-target minimum.
 
-## 6. Where the brief's narrative differs from the data
+## 7. Where the brief's narrative differs from the data
 
 Stated because the screens report the data, not the brief.
 

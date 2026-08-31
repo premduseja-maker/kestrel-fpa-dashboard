@@ -183,23 +183,93 @@ body {
 }
 
 /* ---------------------------------------------------------------------------
+   Chart furniture.
+
+   Axis ticks and in-plot value labels are not prose. They are exempt from the
+   mobile body-text floor below, because setting them at body size re-creates
+   exactly the label collisions the simplified mobile variants exist to prevent.
+   Furniture drawn in HTML (the tornado) wears this class; furniture drawn by
+   Recharts sets fontSize on the SVG and never sees a utility class at all.
+   --------------------------------------------------------------------------- */
+.furniture {
+  font-size: 10px;
+}
+
+/* ---------------------------------------------------------------------------
    Mobile legibility floor.
 
-   The brief asks for density, and on a desktop the 10.5–11.5px scale is what
-   makes a screen readable at a glance. On a phone it stops being dense and
-   starts being small, so the floor is raised to 12px below 640px. Density is a
-   desktop affordance; legibility is not negotiable anywhere.
-
-   Recharts' own tick text is deliberately left at 10px: it is chart furniture
-   rather than prose, and enlarging it re-creates the axis-label collisions that
-   the simplified mobile variants exist to prevent.
+   The brief asks for density, and on a desktop the 10.5–13px scale is what makes
+   a screen readable at a glance. On a phone it stops being dense and starts
+   being small, so body text is floored at 14px below 640px. Density is a desktop
+   affordance; legibility is not negotiable anywhere.
    --------------------------------------------------------------------------- */
 @media (max-width: 640px) {
+  .text-\[9px\],
+  .text-\[10px\],
   .text-\[10\.5px\],
   .text-\[11px\],
-  .text-\[11\.5px\] {
-    font-size: 12px;
+  .text-\[11\.5px\],
+  .text-\[12px\],
+  .text-\[12\.5px\],
+  .text-\[13px\] {
+    font-size: 14px;
   }
+
+  /* Furniture rises a little, but nowhere near body size. */
+  .furniture {
+    font-size: 11px;
+  }
+
+  /* ------------------------------------------------------------------------
+     Touch targets. A 44px minimum applies to anything the owner taps.
+
+     The range input is the awkward one: its native track is ~4px and the thumb
+     ~16px, so the tappable strip is a fraction of the 44px the guideline asks
+     for. Height is set on the input itself and the thumb is enlarged, which
+     grows the hit area without changing how the control looks at rest.
+     ------------------------------------------------------------------------ */
+  input[type="range"] {
+    height: 44px;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    width: 22px;
+    height: 22px;
+  }
+
+  input[type="range"]::-moz-range-thumb {
+    width: 22px;
+    height: 22px;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Horizontal scroll affordance.
+
+   A table or heat map that scrolls sideways on a phone gives no hint that it
+   does. The usual answer is a fade at the right edge, but the brief prohibits
+   gradients, and a fade is invisible to a screen reader in any case. The
+   affordance here is stated instead: a line of text naming what is off-screen,
+   plus a scrollbar that is always visible rather than only on hover.
+   --------------------------------------------------------------------------- */
+.hscroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule) transparent;
+}
+
+.hscroll::-webkit-scrollbar {
+  height: 8px;
+}
+
+.hscroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.hscroll::-webkit-scrollbar-thumb {
+  background: var(--rule);
+  border-radius: 4px;
 }
 
 @media (prefers-reduced-motion: reduce) {
